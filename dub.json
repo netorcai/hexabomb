@@ -1,0 +1,9 @@
+{
+	"name": "hexabomb",
+	"authors": [
+		"Millian Poquet"
+	],
+	"description": "Artificial Intelligence Challenge - D Game Server",
+	"copyright": "Copyright © 2017, Millian Poquet",
+	"license": "GPLv3"
+}
