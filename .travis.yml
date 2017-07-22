@@ -1,10 +1,8 @@
 language: d
 
-# latest dmd, gdc and ldc
+# latest dmd
 d:
   - dmd
-  - gdc
-  - ldc
 
 install:
   # Install doveralls from the latest github release
