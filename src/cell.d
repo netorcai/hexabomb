@@ -1,6 +1,8 @@
 import core.exception : AssertError;
 import std.exception : assertThrown;
 
+import std.format;
+
 struct Cell
 {
     private
@@ -11,10 +13,10 @@ struct Cell
         bool _containsWall = false;
     }
 
-    @property uint color() { return _color; }
-    @property bool containsPlayer() { return _containsPlayer; }
-    @property bool containsBomb() { return _containsBomb; }
-    @property bool containsWall() { return _containsWall; }
+    @property uint color() const pure @safe { return _color; }
+    @property bool containsPlayer() const pure @safe  { return _containsPlayer; }
+    @property bool containsBomb() const pure @safe { return _containsBomb; }
+    @property bool containsWall() const pure @safe { return _containsWall; }
 
     @property uint color(uint c) { return _color = c; }
     @property bool containsPlayer(bool c) { return _containsPlayer = c; }
@@ -80,5 +82,16 @@ struct Cell
 
         c = wall;
         assertThrown!AssertError(c.containsBomb = true);
+    }
+
+    string toString() const pure @safe
+    {
+        return format!"{color=%d,player?=%d,bomb?=%d,wall?=%d}"(color,
+            containsPlayer, containsBomb, containsWall);
+    }
+    pure @safe unittest
+    {
+        Cell c = Cell(32, true, false, false);
+        assert(c.toString == "{color=32,player?=1,bomb?=0,wall?=0}");
     }
 }
