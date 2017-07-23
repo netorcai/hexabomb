@@ -123,10 +123,12 @@ class Board
         Board b = new Board;
         assert(b.cellExists(Position(0,0)) == false);
         assertThrown!AssertError(b.cellAt(Position(0,0)));
+        assert(b.cellAtNoCheck(Position(0,0)) is null);
 
         b.addCell(Position(0,0), Cell());
         assert(b.cellExists(Position(0,0)) == true);
         assert(b.cellAt(Position(0,0)) !is null);
+        assert(b.cellAtNoCheck(Position(0,0)) == b.cellAt(Position(0,0)));
 
         // Multiple addition
         assertThrown!AssertError(b.addCell(Position(0,0), Cell()));
