@@ -31,10 +31,10 @@ The axial coordinate system makes sure that two different cells have different c
 This system is quite handy since going in any direction always results in the same coordinate transformation.
 
 Let (q,r) be a cell from the board. Let (a,b) be a neighboring cell of (q,r).  
-The (a,b) coordinates can be computed from (q,r) by adding (dx,dy) to it,  
-where (dx,dy) depends on the direction from (q,r) to (a,b):
+The (a,b) coordinates can be computed from (q,r) by adding (dq,dr) to it,  
+where (dq,dr) depends on the direction from (q,r) to (a,b):
 
-| Direction |          Meaning         | (dx,dy) |
+| Direction |          Meaning         | (dq,dr) |
 |:---------:|:------------------------:|:-------:|
 | x+        | towards right            | (+1,0)  |
 | y+        | towards up and right     | (+1,-1) |
