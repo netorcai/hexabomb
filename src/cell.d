@@ -156,7 +156,7 @@ struct Cell
         wall.addWall;
         assert(wall.isTraversable == false);
 
-        // Characters and bombs can in the same cell.
+        // Characters and bombs can be in the same cell.
         // But Characters must be there first.
         c = empty;
         assert(c.isTraversable == true);
