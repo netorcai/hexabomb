@@ -11,8 +11,10 @@ stdenv.mkDerivation rec {
   src = ./.;
 
   nativeBuildInputs = [ dmd dub ];
+  doCheck = true;
 
   buildPhase = ''dub build --force'';
+  checkPhase = ''dub test'';
   installPhase = ''
     mkdir -p $out/bin
     cp ./hexabomb $out/bin/
