@@ -1,10 +1,14 @@
 import core.exception : AssertError;
 import std.algorithm : canFind, sort;
 import std.container : DList;
-import std.exception : assertThrown;
+import std.conv;
+import std.exception : assertThrown, enforce;
 import std.format;
+import std.json;
 import std.stdio;
 import std.typecons;
+
+import netorcai.json_util;
 
 import bomb;
 import cell;
@@ -86,18 +90,42 @@ enum : Position
 immutable Position[6] offsets = [X_PLUS, Y_PLUS, Z_PLUS,
                                  X_MINUS, Y_MINUS, Z_MINUS];
 
-struct Character
-{
-    immutable uint color;
-    bool alive = true;
-}
-
 class Board
 {
     private
     {
         Cell[Position] _cells;
         Position[][Position] _neighbors;
+    }
+
+    this()
+    {}
+
+    this(in JSONValue array)
+    in
+    {
+        assert(array.type == JSON_TYPE.ARRAY,
+            "JSON value " ~ array.toString ~ " is not an array");
+    }
+    body
+    {
+        foreach(i, o; array.array)
+        {
+            enforce(o.type == JSON_TYPE.OBJECT,
+                "Element " ~ to!string(i) ~ " (" ~ o.toString ~ ") is not an object");
+
+            Position p;
+            p.q = o["q"].getInt;
+            p.r = o["r"].getInt;
+
+            Cell c;
+            if (o["wall"].getBool)
+                c.addWall;
+
+            addCell(p, c);
+        }
+
+        updateNeighborsCache;
     }
 
     @property Position[] neighbors(in Position pos) pure @safe
@@ -492,6 +520,12 @@ class Board
                             b._cells.keys,
                             "Compact 3, 1 wall");
     }
+
+    override bool opEquals(Object o)
+    {
+        Board b = cast(Board) o;
+        return (this._cells == b._cells) && (this._neighbors == b._neighbors);
+    }
 }
 
 Board generate_empty_board()
@@ -545,4 +579,59 @@ Board generate_empty_board()
     b.updateNeighborsCache;
 
     return b;
+}
+
+unittest // Construction from JSON
+{
+    Board b1 = new Board(`[
+        {"q": 0 , "r":-3, "wall": false},
+        {"q": 1 , "r":-3, "wall": false},
+        {"q": 2 , "r":-3, "wall": false},
+        {"q": 3 , "r":-3, "wall": false},
+
+        {"q": -1, "r":-2, "wall": false},
+        {"q": 0 , "r":-2, "wall": false},
+        {"q": 1 , "r":-2, "wall": false},
+        {"q": 2 , "r":-2, "wall": false},
+        {"q": 3 , "r":-2, "wall": false},
+
+        {"q": -2, "r":-1, "wall": false},
+        {"q": -1, "r":-1, "wall": false},
+        {"q": 0 , "r":-1, "wall": false},
+        {"q": 1 , "r":-1, "wall": false},
+        {"q": 2 , "r":-1, "wall": false},
+        {"q": 3 , "r":-1, "wall": false},
+
+        {"q": -3, "r": 0, "wall": false},
+        {"q": -2, "r": 0, "wall": false},
+        {"q": -1, "r": 0, "wall": false},
+        {"q": 0 , "r": 0, "wall": false},
+        {"q": 1 , "r": 0, "wall": false},
+        {"q": 2 , "r": 0, "wall": false},
+        {"q": 3 , "r": 0, "wall": false},
+
+        {"q": -3, "r": 1, "wall": false},
+        {"q": -2, "r": 1, "wall": false},
+        {"q": -1, "r": 1, "wall": false},
+        {"q": 0 , "r": 1, "wall": false},
+        {"q": 1 , "r": 1, "wall": false},
+        {"q": 2 , "r": 1, "wall": false},
+
+        {"q": -3, "r": 2, "wall": false},
+        {"q": -2, "r": 2, "wall": false},
+        {"q": -1, "r": 2, "wall": false},
+        {"q": 0 , "r": 2, "wall": true},
+        {"q": 1 , "r": 2, "wall": false},
+
+        {"q": -3, "r": 3, "wall": false},
+        {"q": -2, "r": 3, "wall": false},
+        {"q": -1, "r": 3, "wall": false},
+        {"q": 0 , "r": 3, "wall": false}
+    ]`.parseJSON);
+
+    Board b2 = generate_empty_board;
+    assert(b1 != b2);
+
+    b2.cellAt(Position(0,2)).addWall;
+    assert(b1 == b2);
 }
