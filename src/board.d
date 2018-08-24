@@ -75,6 +75,12 @@ struct Position
         else
             return q - oth.q;
     }
+    unittest
+    {
+        assert(Position(0,0) == Position(0,0));
+        assert(Position(0,1) != Position(0,0));
+        assert(Position(0,0) != Position(0,1));
+    }
 }
 
 enum : Position
@@ -388,7 +394,7 @@ class Board
     }
     unittest
     {
-        Board b = generate_empty_board;
+        Board b = generateEmptyBoard;
 
         void wrapperAssertEquals(in Position[] a, in Position[] b,
                                  in string prefix)
@@ -521,14 +527,53 @@ class Board
                             "Compact 3, 1 wall");
     }
 
-    override bool opEquals(Object o)
+    override bool opEquals(const Object o) @safe @nogc pure const
     {
-        Board b = cast(Board) o;
+        auto b = cast(const Board) o;
         return (this._cells == b._cells) && (this._neighbors == b._neighbors);
+    }
+
+    JSONValue toJSON() const
+    out(r)
+    {
+        assert(r.type == JSON_TYPE.ARRAY);
+    }
+    body
+    {
+        JSONValue v = `[]`.parseJSON;
+
+        alias PosCell = Tuple!(Position, "position", Cell, "cell");
+        PosCell[] tuples;
+        foreach(pos, cell; _cells)
+            tuples ~= PosCell(pos, cell);
+
+        foreach(t ; tuples.sort!"a.position < b.position")
+        {
+            JSONValue cellValue = `{}`.parseJSON;
+            cellValue.object["q"] = t.position.q;
+            cellValue.object["r"] = t.position.r;
+            cellValue.object["wall"] = t.cell.isWall;
+
+            v.array ~= cellValue;
+        }
+
+        return v;
+    }
+    unittest
+    {
+        JSONValue boardDescription = `[
+          {"q": 0, "r":-3, "wall": false},
+          {"q": 1, "r":-3, "wall": false},
+          {"q": 2, "r":-5, "wall": true},
+          {"q": 2, "r":-3, "wall": true},
+          {"q": 3, "r":-3, "wall": false}
+        ]`.parseJSON;
+        Board b = new Board(boardDescription);
+        assert(b.toJSON == boardDescription);
     }
 }
 
-Board generate_empty_board()
+Board generateEmptyBoard()
 {
     Board b = new Board;
 
@@ -629,7 +674,7 @@ unittest // Construction from JSON
         {"q": 0 , "r": 3, "wall": false}
     ]`.parseJSON);
 
-    Board b2 = generate_empty_board;
+    Board b2 = generateEmptyBoard;
     assert(b1 != b2);
 
     b2.cellAt(Position(0,2)).addWall;
