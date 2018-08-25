@@ -2,7 +2,7 @@ import core.exception : AssertError;
 import std.algorithm : canFind, sort;
 import std.container : DList;
 import std.conv;
-import std.exception : assertThrown, enforce;
+import std.exception;
 import std.format;
 import std.json;
 import std.stdio;
@@ -345,11 +345,6 @@ class Board
 
         final switch(bomb.type)
         {
-            bool isCellExplodable(in Cell* cell)
-            {
-                return !cell.isWall;
-            }
-
             case BombType.LONG:
                 // Straight lines in all directions
                 foreach (offset; offsets)
@@ -358,7 +353,7 @@ class Board
                     foreach(_; 0..bomb.range)
                     {
                         pos = pos + offset;
-                        if (cellExists(pos) && isCellExplodable(cellAt(pos)))
+                        if (cellExists(pos) && cellAt(pos).isExplodable)
                             explodingCells ~= pos;
                         else
                             break;
@@ -381,7 +376,7 @@ class Board
                     {
                         if (cellExists(neighbor) &&
                             !canFind(explodingCells, neighbor) &&
-                            isCellExplodable(cellAt(neighbor)) &&
+                            cellAt(neighbor).isExplodable &&
                             cd.distance < bomb.range)
                         {
                             queue.insertBack(PosDist(neighbor, cd.distance+1));
@@ -410,12 +405,8 @@ class Board
             copyA.sort!("a < b");
             copyB.sort!("a < b");
 
-            if (copyA != copyB)
-            {
-                writeln("Array mismatch in test " ~ prefix,
-                        "\na=", copyA, "\nb=", copyB);
-                assert(0);
-            }
+            assert(copyA == copyB,
+                format!"Array mismatch in test %s. a=%s. b=%s."(prefix, copyA, copyB));
         }
 
         Bomb bomb;
@@ -679,4 +670,9 @@ unittest // Construction from JSON
 
     b2.cellAt(Position(0,2)).addWall;
     assert(b1 == b2);
+
+    string s = `[1]`;
+    assertThrown(new Board(s.parseJSON));
+    assert(collectExceptionMsg(new Board(s.parseJSON)) ==
+            "Element 0 (1) is not an object");
 }

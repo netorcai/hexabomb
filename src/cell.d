@@ -23,6 +23,7 @@ struct Cell
     {
         return !_isWall && !_hasCharacter && !_hasBomb;
     }
+    @property bool isExplodable() const pure @safe @nogc { return !_isWall; }
 
 
     // Character manipulations
