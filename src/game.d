@@ -247,6 +247,7 @@ class Game
             JSONValue cValue = `{}`.parseJSON;
             cValue.object["color"] = b.color;
             cValue.object["range"] = b.range;
+            cValue.object["delay"] = b.delay;
             cValue.object["q"] = b.position.q;
             cValue.object["r"] = b.position.r;
             cValue.object["type"] = b.type;
@@ -269,15 +270,15 @@ class Game
         }`.parseJSON);
         assert(g.describeBombs == `[]`.parseJSON);
 
-        g._bombs ~= Bomb(Position(0,1), 3, 5, BombType.LONG);
+        g._bombs ~= Bomb(Position(0,1), 3, 5, BombType.LONG, 7);
         assert(g.describeBombs.toString ==
-            `[{"q":0, "r":1, "color":3, "range":5, "type":"long"}]`
+            `[{"q":0, "r":1, "color":3, "range":5, "type":"long", "delay":7}]`
             .parseJSON.toString);
 
-        g._bombs ~= Bomb(Position(0,2), 4, 2, BombType.COMPACT);
+        g._bombs ~= Bomb(Position(0,2), 4, 2, BombType.COMPACT, 2);
         assert(g.describeBombs.toString ==
-            `[{"q":0, "r":1, "color":3, "range":5, "type":"long"},
-              {"q":0, "r":2, "color":4, "range":2, "type":"compact"}]`
+            `[{"q":0, "r":1, "color":3, "range":5, "type":"long", "delay":7},
+              {"q":0, "r":2, "color":4, "range":2, "type":"compact", "delay":2}]`
             .parseJSON.toString);
     }
 

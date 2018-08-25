@@ -17,6 +17,7 @@ struct Bomb
         uint _color = 0;
         uint _range = 1;
         BombType _type = BombType.LONG;
+        uint _delay = 1;
     }
 
     // "Get" properties
@@ -24,6 +25,7 @@ struct Bomb
     @property uint color() const pure @safe @nogc { return _color; }
     @property uint range() const pure @safe @nogc { return _range; }
     @property BombType type() const pure @safe @nogc { return _type; }
+    @property uint delay() const pure @safe @nogc { return _delay; }
 
     // "Set" properties
     @property void position(in Position pos) pure @safe @nogc
@@ -41,4 +43,8 @@ struct Bomb
     @property void type(in BombType type) pure @safe @nogc
     out { assert(_type == type); }
     body { _type = type; }
+
+    @property void delay(in uint delay) pure @safe @nogc
+    out { assert(_delay == delay); }
+    body { _delay = delay; }
 }
