@@ -31,7 +31,8 @@ class Game
 
     this(in JSONValue initialMap)
     {
-        enforce(initialMap.type == JSON_TYPE.OBJECT, "initial map is not an object");
+        enforce(initialMap.type == JSON_TYPE.OBJECT,
+            "initial map is not an object");
         _board = new Board(initialMap["cells"]);
 
         auto initPos = initialMap["initial_positions"];
@@ -39,7 +40,10 @@ class Game
             "initial_positions is not an object");
         foreach(key, value; initPos.object)
         {
-            immutable uint color = to!uint(key);
+            uint color;
+            try { color = to!uint(key); }
+            catch (Exception) { enforce(false, format!"invalid key='%s' in initial_positions"(key)); }
+
             enforce(value.type == JSON_TYPE.ARRAY,
                 "initial positions are not an array for key=" ~ key);
             enforce(value.array.length > 0,
@@ -48,7 +52,7 @@ class Game
             foreach(i, o; value.array)
             {
                 enforce(o.type == JSON_TYPE.OBJECT,
-                    "Element " ~ to!string(i) ~ "of initial_positions should be an object");
+                    "Element " ~ to!string(i) ~ " of initial_positions should be an object");
                 Position p;
                 p.q = o["q"].getInt;
                 p.r = o["r"].getInt;
@@ -58,6 +62,38 @@ class Game
         }
 
         checkInitialPositions(_initialPositions, _board);
+    }
+    unittest
+    {
+        string s = `[]`;
+        assertThrown(new Game(s.parseJSON));
+        assert(collectExceptionMsg(new Game(s.parseJSON)) ==
+            "initial map is not an object");
+
+        s = `{"cells":[], "initial_positions":4}`;
+        assertThrown(new Game(s.parseJSON));
+        assert(collectExceptionMsg(new Game(s.parseJSON)) ==
+            "initial_positions is not an object");
+
+        s = `{"cells":[], "initial_positions":{"bouh":1}}`;
+        assertThrown(new Game(s.parseJSON));
+        assert(collectExceptionMsg(new Game(s.parseJSON)) ==
+            "invalid key='bouh' in initial_positions");
+
+        s = `{"cells":[], "initial_positions":{"0":1}}`;
+        assertThrown(new Game(s.parseJSON));
+        assert(collectExceptionMsg(new Game(s.parseJSON)) ==
+            "initial positions are not an array for key=0");
+
+        s = `{"cells":[], "initial_positions":{"0":[]}}`;
+        assertThrown(new Game(s.parseJSON));
+        assert(collectExceptionMsg(new Game(s.parseJSON)) ==
+            "initial positions are empty for key=0");
+
+        s = `{"cells":[], "initial_positions":{"0":[4]}}`;
+        assertThrown(new Game(s.parseJSON));
+        assert(collectExceptionMsg(new Game(s.parseJSON)) ==
+            "Element 0 of initial_positions should be an object");
     }
 
     /// Checks whether initial positions are fine. Throw Exception otherwise.
@@ -213,12 +249,36 @@ class Game
             cValue.object["range"] = b.range;
             cValue.object["q"] = b.position.q;
             cValue.object["r"] = b.position.r;
-            cValue.object["type"] = to!string(b.type);
+            cValue.object["type"] = b.type;
 
             v.array ~= cValue;
         }
 
         return v;
+    }
+    unittest
+    {
+        Game g = new Game(`{
+          "cells":[
+            {"q":0, "r":0, "wall":false},
+            {"q":0, "r":1, "wall":false}
+          ],
+          "initial_positions":{
+            "0": [{"q":0, "r":0}]
+          }
+        }`.parseJSON);
+        assert(g.describeBombs == `[]`.parseJSON);
+
+        g._bombs ~= Bomb(Position(0,1), 3, 5, BombType.LONG);
+        assert(g.describeBombs.toString ==
+            `[{"q":0, "r":1, "color":3, "range":5, "type":"long"}]`
+            .parseJSON.toString);
+
+        g._bombs ~= Bomb(Position(0,2), 4, 2, BombType.COMPACT);
+        assert(g.describeBombs.toString ==
+            `[{"q":0, "r":1, "color":3, "range":5, "type":"long"},
+              {"q":0, "r":2, "color":4, "range":2, "type":"compact"}]`
+            .parseJSON.toString);
     }
 
     /// Generate a JSON description of the game state
