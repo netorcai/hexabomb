@@ -15,5 +15,5 @@ install:
 script:
   - dub test --compiler=${DC} -b unittest-cov
   # Remove coverage reports for netorcai-client
-  - find . -name '*.lst' | grep netorcai | sed -E "s/(.*)/rm -f -- '\1'/" | bash
+  - find . -name '*.lst' | grep 'netorcai\|dub_test' | sed -E "s/(.*)/rm -f -- '\1'/" | bash
   - ./doveralls
