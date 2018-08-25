@@ -197,6 +197,30 @@ class Game
         return v;
     }
 
+    private JSONValue describeBombs() pure const
+    out(r)
+    {
+        assert(r.type == JSON_TYPE.ARRAY);
+    }
+    body
+    {
+        JSONValue v = `[]`.parseJSON;
+
+        foreach(b; _bombs)
+        {
+            JSONValue cValue = `{}`.parseJSON;
+            cValue.object["color"] = b.color;
+            cValue.object["range"] = b.range;
+            cValue.object["q"] = b.position.q;
+            cValue.object["r"] = b.position.r;
+            cValue.object["type"] = to!string(b.type);
+
+            v.array ~= cValue;
+        }
+
+        return v;
+    }
+
     /// Generate a JSON description of the game state
     JSONValue describeInitialState() const
     out(r)
@@ -207,8 +231,8 @@ class Game
     {
         JSONValue v = `{}`.parseJSON;
         v.object["cells"] = _board.toJSON;
-
         v.object["characters"] = describeCharacters;
+        v.object["bombs"] = describeBombs;
 
         return v;
     }
@@ -225,8 +249,8 @@ class Game
           }
         }`.parseJSON);
         g.placeInitialCharacters(2);
-        import std.stdio; writeln(g.describeInitialState);
-        assert(g.describeInitialState == `{
+        assert(g.describeInitialState.toString == `{
+            "bombs": [],
             "cells":[
               {"q":0, "r":0, "wall":false},
               {"q":0, "r":1, "wall":false}
@@ -235,9 +259,7 @@ class Game
               {"id":0, "color":1, "q":0, "r":0, "alive":true},
               {"id":1, "color":2, "q":0, "r":1, "alive":true}
             ]
-            },
-            "bombs": []
-          }`.parseJSON);
+          }`.parseJSON.toString);
     }
 
 }
