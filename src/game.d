@@ -183,7 +183,7 @@ class Game
             format!"Too many players (%d) for this map (max=%d)."(
                 nbPlayers, _initialPositions.length));
 
-        int characterID = 0;
+        uint characterID = 0;
         foreach(playerID; 0..nbPlayers)
         {
             foreach(pos; _initialPositions[playerID])
@@ -270,15 +270,15 @@ class Game
         }`.parseJSON);
         assert(g.describeBombs == `[]`.parseJSON);
 
-        g._bombs ~= Bomb(Position(0,1), 3, 5, BombType.LONG, 7);
+        g._bombs ~= Bomb(Position(0,1), 3, 5, BombType.thin, 7);
         assert(g.describeBombs.toString ==
-            `[{"q":0, "r":1, "color":3, "range":5, "type":"long", "delay":7}]`
+            `[{"q":0, "r":1, "color":3, "range":5, "type":"thin", "delay":7}]`
             .parseJSON.toString);
 
-        g._bombs ~= Bomb(Position(0,2), 4, 2, BombType.COMPACT, 2);
+        g._bombs ~= Bomb(Position(0,2), 4, 2, BombType.fat, 2);
         assert(g.describeBombs.toString ==
-            `[{"q":0, "r":1, "color":3, "range":5, "type":"long", "delay":7},
-              {"q":0, "r":2, "color":4, "range":2, "type":"compact", "delay":2}]`
+            `[{"q":0, "r":1, "color":3, "range":5, "type":"thin", "delay":7},
+              {"q":0, "r":2, "color":4, "range":2, "type":"fat", "delay":2}]`
             .parseJSON.toString);
     }
 

@@ -4,8 +4,8 @@ import board : Position;
 
 enum BombType : string
 {
-    LONG = "long",
-    COMPACT = "compact"
+    thin = "thin",
+    fat = "fat"
 }
 
 struct Bomb
@@ -16,7 +16,7 @@ struct Bomb
         Position _pos = Position(-42,-42);
         uint _color = 0;
         uint _range = 1;
-        BombType _type = BombType.LONG;
+        BombType _type = BombType.thin;
         uint _delay = 1;
     }
 
