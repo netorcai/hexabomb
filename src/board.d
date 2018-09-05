@@ -319,7 +319,7 @@ class Board
         }
     }
 
-    Position[] computeExplosionRange(in Bomb bomb)
+    int[Position] computeExplosionRange(in Bomb bomb)
     in
     {
         assert(cellExists(bomb.position), "Bomb is not in the board. " ~
@@ -342,7 +342,7 @@ class Board
     }
     body
     {
-        Position[] explodingCells = [bomb.position];
+        int[Position] explodingCells = [bomb.position: 0];
 
         final switch(bomb.type)
         {
@@ -351,11 +351,11 @@ class Board
                 foreach (offset; offsets)
                 {
                     Position pos = bomb.position;
-                    foreach(_; 0..bomb.range)
+                    foreach(dist ; 1..bomb.range+1)
                     {
                         pos = pos + offset;
                         if (cellExists(pos) && cellAt(pos).isExplodable)
-                            explodingCells ~= pos;
+                            explodingCells[pos] = dist;
                         else
                             break;
                     }
@@ -376,12 +376,12 @@ class Board
                     foreach (neighbor; _neighbors[cd.position])
                     {
                         if (cellExists(neighbor) &&
-                            !canFind(explodingCells, neighbor) &&
+                            !(neighbor in explodingCells) &&
                             cellAt(neighbor).isExplodable &&
                             cd.distance < bomb.range)
                         {
                             queue.insertBack(PosDist(neighbor, cd.distance+1));
-                            explodingCells ~= neighbor;
+                            explodingCells[neighbor] = cd.distance + 1;
                         }
                     }
                 }
@@ -392,22 +392,11 @@ class Board
     {
         Board b = generateEmptyBoard;
 
-        void wrapperAssertEquals(in Position[] a, in Position[] b,
+        void wrapperAssertEquals(in int[Position] a, in int[Position] b,
                                  in string prefix)
         {
-            Position[] copyA, copyB;
-
-            copyA.length = a.length;
-            copyB.length = b.length;
-
-            copyA[] = a[];
-            copyB[] = b[];
-
-            copyA.sort!("a < b");
-            copyB.sort!("a < b");
-
-            assert(copyA == copyB,
-                format!"Array mismatch in test %s. a=%s. b=%s."(prefix, copyA, copyB));
+            assert(a == b,
+                format!"Array mismatch in test %s.\na=%s.\nb=%s."(prefix, a, b));
         }
 
         Bomb bomb;
@@ -416,85 +405,103 @@ class Board
         // Distance 0
         bomb.type = BombType.thin;
         bomb.range = 0;
-        assert(b.computeExplosionRange(bomb) == [Position(0,0)]);
+        assert(b.computeExplosionRange(bomb) == [Position(0,0): 0]);
 
         bomb.type = BombType.fat;
         bomb.range = 0;
-        assert(b.computeExplosionRange(bomb) == [Position(0,0)]);
+        assert(b.computeExplosionRange(bomb) == [Position(0,0): 0]);
 
         // Distance 1
         bomb.type = BombType.thin;
         bomb.range = 1;
         wrapperAssertEquals(b.computeExplosionRange(bomb),
-                            [Position( 0, 0),
-                             Position( 1, 0),
-                             Position( 1,-1),
-                             Position( 0,-1),
-                             Position(-1, 0),
-                             Position(-1, 1),
-                             Position( 0, 1)],
+                            [Position( 0, 0) : 0,
+                             Position( 1, 0) : 1,
+                             Position( 1,-1) : 1,
+                             Position( 0,-1) : 1,
+                             Position(-1, 0) : 1,
+                             Position(-1, 1) : 1,
+                             Position( 0, 1) : 1],
                             "Long 1");
 
         bomb.type = BombType.fat;
         bomb.range = 1;
         wrapperAssertEquals(b.computeExplosionRange(bomb),
-                            [Position( 0, 0),
-                             Position( 1, 0),
-                             Position( 1,-1),
-                             Position( 0,-1),
-                             Position(-1, 0),
-                             Position(-1, 1),
-                             Position( 0, 1)],
+                            [Position( 0, 0) : 0,
+                             Position( 1, 0) : 1,
+                             Position( 1,-1) : 1,
+                             Position( 0,-1) : 1,
+                             Position(-1, 0) : 1,
+                             Position(-1, 1) : 1,
+                             Position( 0, 1) : 1],
                             "Compact 1");
 
         // Distance 2
         bomb.type = BombType.thin;
         bomb.range = 2;
         wrapperAssertEquals(b.computeExplosionRange(bomb),
-                            [Position( 0, 0),
-                             Position( 1, 0), Position( 2, 0),
-                             Position( 1,-1), Position( 2,-2),
-                             Position( 0,-1), Position( 0,-2),
-                             Position(-1, 0), Position(-2, 0),
-                             Position(-1, 1), Position(-2, 2),
-                             Position( 0, 1), Position( 0, 2)],
+                            [Position( 0, 0) : 0,
+                             Position( 1, 0) : 1, Position( 2, 0) : 2,
+                             Position( 1,-1) : 1, Position( 2,-2) : 2,
+                             Position( 0,-1) : 1, Position( 0,-2) : 2,
+                             Position(-1, 0) : 1, Position(-2, 0) : 2,
+                             Position(-1, 1) : 1, Position(-2, 2) : 2,
+                             Position( 0, 1) : 1, Position( 0, 2) : 2],
                             "Long 2");
 
         bomb.type = BombType.fat;
         bomb.range = 2;
         wrapperAssertEquals(b.computeExplosionRange(bomb),
-                            [Position( 0, 0),
-                             Position( 1, 0), Position( 2, 0),
-                             Position( 1,-1), Position( 2,-2),
-                             Position( 0,-1), Position( 0,-2),
-                             Position(-1, 0), Position(-2, 0),
-                             Position(-1, 1), Position(-2, 2),
-                             Position( 0, 1), Position( 0, 2),
-                             Position( 2,-1),
-                             Position( 1,-2),
-                             Position(-1,-1),
-                             Position(-2, 1),
-                             Position(-1, 2),
-                             Position( 1, 1)],
+                            [Position( 0, 0) : 0,
+                             Position( 1, 0) : 1, Position( 2, 0) : 2,
+                             Position( 1,-1) : 1, Position( 2,-2) : 2,
+                             Position( 0,-1) : 1, Position( 0,-2) : 2,
+                             Position(-1, 0) : 1, Position(-2, 0) : 2,
+                             Position(-1, 1) : 1, Position(-2, 2) : 2,
+                             Position( 0, 1) : 1, Position( 0, 2) : 2,
+                             Position( 2,-1) : 2,
+                             Position( 1,-2) : 2,
+                             Position(-1,-1) : 2,
+                             Position(-2, 1) : 2,
+                             Position(-1, 2) : 2,
+                             Position( 1, 1) : 2],
                             "Compact 2");
 
         // Distance 3
         bomb.type = BombType.thin;
         bomb.range = 3;
         wrapperAssertEquals(b.computeExplosionRange(bomb),
-                            [Position( 0, 0),
-                             Position( 1, 0), Position( 2, 0), Position( 3, 0),
-                             Position( 1,-1), Position( 2,-2), Position( 3,-3),
-                             Position( 0,-1), Position( 0,-2), Position( 0,-3),
-                             Position(-1, 0), Position(-2, 0), Position(-3, 0),
-                             Position(-1, 1), Position(-2, 2), Position(-3, 3),
-                             Position( 0, 1), Position( 0, 2), Position( 0, 3)],
+                            [Position( 0, 0) : 0,
+                             Position( 1, 0) : 1, Position( 2, 0) : 2, Position( 3, 0) : 3,
+                             Position( 1,-1) : 1, Position( 2,-2) : 2, Position( 3,-3) : 3,
+                             Position( 0,-1) : 1, Position( 0,-2) : 2, Position( 0,-3) : 3,
+                             Position(-1, 0) : 1, Position(-2, 0) : 2, Position(-3, 0) : 3,
+                             Position(-1, 1) : 1, Position(-2, 2) : 2, Position(-3, 3) : 3,
+                             Position( 0, 1) : 1, Position( 0, 2) : 2, Position( 0, 3) : 3],
                             "Long 3");
 
         bomb.type = BombType.fat;
         bomb.range = 3;
         wrapperAssertEquals(b.computeExplosionRange(bomb),
-                            b._cells.keys,
+                            [Position( 0, 0) : 0,
+                             Position( 1, 0) : 1, Position( 2, 0) : 2,
+                             Position( 1,-1) : 1, Position( 2,-2) : 2,
+                             Position( 0,-1) : 1, Position( 0,-2) : 2,
+                             Position(-1, 0) : 1, Position(-2, 0) : 2,
+                             Position(-1, 1) : 1, Position(-2, 2) : 2,
+                             Position( 0, 1) : 1, Position( 0, 2) : 2,
+                             Position( 2,-1) : 2,
+                             Position( 1,-2) : 2,
+                             Position(-1,-1) : 2,
+                             Position(-2, 1) : 2,
+                             Position(-1, 2) : 2,
+                             Position( 1, 1) : 2,
+                             Position( 3, 0) : 3, Position( 3,-1) : 3, Position( 3,-2) : 3,
+                             Position( 3,-3) : 3, Position( 2,-3) : 3, Position( 1,-3) : 3,
+                             Position( 0,-3) : 3, Position(-1,-2) : 3, Position(-2,-1) : 3,
+                             Position(-3, 0) : 3, Position(-3, 1) : 3, Position(-3, 2) : 3,
+                             Position(-3, 3) : 3, Position(-2, 3) : 3, Position(-1, 3) : 3,
+                             Position( 0, 3) : 3, Position( 1, 2) : 3, Position( 2, 1) : 3],
                             "Compact 3");
 
         // Distance 3, 1 wall.
@@ -503,19 +510,36 @@ class Board
         bomb.type = BombType.thin;
         bomb.range = 3;
         wrapperAssertEquals(b.computeExplosionRange(bomb),
-                            [Position( 0, 0),
-                             Position( 1,-1), Position( 2,-2), Position( 3,-3),
-                             Position( 0,-1), Position( 0,-2), Position( 0,-3),
-                             Position(-1, 0), Position(-2, 0), Position(-3, 0),
-                             Position(-1, 1), Position(-2, 2), Position(-3, 3),
-                             Position( 0, 1), Position( 0, 2), Position( 0, 3)],
+                            [Position( 0, 0) : 0,
+                             Position( 1,-1) : 1, Position( 2,-2) : 2, Position( 3,-3) : 3,
+                             Position( 0,-1) : 1, Position( 0,-2) : 2, Position( 0,-3) : 3,
+                             Position(-1, 0) : 1, Position(-2, 0) : 2, Position(-3, 0) : 3,
+                             Position(-1, 1) : 1, Position(-2, 2) : 2, Position(-3, 3) : 3,
+                             Position( 0, 1) : 1, Position( 0, 2) : 2, Position( 0, 3) : 3],
                             "Long 3, 1 wall");
 
         bomb.type = BombType.fat;
         bomb.range = 3;
-        wrapperAssertEquals(b.computeExplosionRange(bomb) ~ [Position(1,0),
-                                                             Position(3,0)],
-                            b._cells.keys,
+        wrapperAssertEquals(b.computeExplosionRange(bomb),
+                            [Position( 0, 0) : 0,
+                                                  Position( 2, 0) : 3,
+                             Position( 1,-1) : 1, Position( 2,-2) : 2,
+                             Position( 0,-1) : 1, Position( 0,-2) : 2,
+                             Position(-1, 0) : 1, Position(-2, 0) : 2,
+                             Position(-1, 1) : 1, Position(-2, 2) : 2,
+                             Position( 0, 1) : 1, Position( 0, 2) : 2,
+                             Position( 2,-1) : 2,
+                             Position( 1,-2) : 2,
+                             Position(-1,-1) : 2,
+                             Position(-2, 1) : 2,
+                             Position(-1, 2) : 2,
+                             Position( 1, 1) : 2,
+                                                  Position( 3,-1) : 3, Position( 3,-2) : 3,
+                             Position( 3,-3) : 3, Position( 2,-3) : 3, Position( 1,-3) : 3,
+                             Position( 0,-3) : 3, Position(-1,-2) : 3, Position(-2,-1) : 3,
+                             Position(-3, 0) : 3, Position(-3, 1) : 3, Position(-3, 2) : 3,
+                             Position(-3, 3) : 3, Position(-2, 3) : 3, Position(-1, 3) : 3,
+                             Position( 0, 3) : 3, Position( 1, 2) : 3, Position( 2, 1) : 3],
                             "Compact 3, 1 wall");
     }
 
