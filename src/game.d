@@ -206,6 +206,7 @@ class Game
         }`.parseJSON);
         assertThrown(g.placeInitialCharacters(2));
         assertNotThrown(g.placeInitialCharacters(1));
+        assert(g._characters[0].pos == Position(0,0));
     }
 
     /// Generate a JSON description of the current characters
@@ -322,5 +323,4 @@ class Game
             ]
           }`.parseJSON.toString);
     }
-
 }
