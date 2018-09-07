@@ -121,6 +121,24 @@ struct Cell
         _isWall = false;
     }
 
+    @property void explode(uint color) pure @safe @nogc
+    in
+    {
+        assert(!_isWall, "Trying to explode a wall...");
+    }
+    out
+    {
+        assert(_color == color);
+        assert(_hasCharacter == false);
+        assert(_hasBomb == false);
+    }
+    body
+    {
+        _hasCharacter = false;
+        _hasBomb = false;
+        _color = color;
+    }
+
 
     invariant
     {

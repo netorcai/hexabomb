@@ -4,6 +4,7 @@ import std.exception;
 import std.format;
 import std.json;
 import std.range;
+import std.typecons;
 
 import netorcai.json_util;
 
@@ -322,5 +323,88 @@ class Game
               {"id":1, "color":2, "q":0, "r":1, "alive":true}
             ]
           }`.parseJSON.toString);
+    }
+
+    /**
+     * Explode bombs, change board colors and kill characters if needed.
+    **/
+    private void doBombTurn()
+    {
+        alias ColorDist = Tuple!(uint, "color", int, "distance");
+        ColorDist[Position] boardAlterations;
+        Bomb[Position] explodedBombs;
+
+        void updateBoardAlterations(ref ColorDist[Position] alterations, in int[Position] explosionRange, in uint color)
+        {
+            foreach(pos, dist; explosionRange)
+            {
+                if (pos in alterations)
+                {
+                    // Potential conflict.
+                    if (dist < alterations[pos].distance)
+                    {
+                        // The new bomb is closer. The cell color is set to the new bomb's.
+                        alterations[pos] = ColorDist(color, dist);
+                    }
+                    else if (dist == alterations[pos].distance)
+                    {
+                        // At least two bombs are at the same distance of this cell.
+                        // If colors are different, reset the cell to a non-player color.
+                        if (color != alterations[pos].color)
+                            alterations[pos].color = 0;
+                    }
+                    // Otherwise, the previous bomb(s) were closer, the new bomb can be ignored for this cell.
+                }
+                else
+                {
+                    // Newly exploded cell.
+                    alterations[pos] = ColorDist(color, dist);
+                }
+            }
+        }
+
+        // Reduce the delay of all bombs.
+        // Compute the explosion range of 0-delay bombs
+        foreach (ref b; _bombs)
+        {
+            b.delay = b.delay - 1;
+
+            if (b.delay <= 0)
+            {
+                explodedBombs[b.position] = b;
+                auto explosion = _board.computeExplosionRange(b);
+                updateBoardAlterations(boardAlterations, explosion, b.color);
+            }
+        }
+
+        // Until convergence: Explode bombs that are in exploded cells
+        bool converged = false;
+        do
+        {
+            auto newlyExplodedBombs = _bombs.filter!(b => !(b.position in explodedBombs)
+                                                       &&  (b.position in boardAlterations));
+
+            foreach (b; _bombs)
+            {
+                explodedBombs[b.position] = b;
+                auto explosion = _board.computeExplosionRange(b);
+                updateBoardAlterations(boardAlterations, explosion, b.color);
+            }
+
+            converged = !newlyExplodedBombs.empty;
+        } while(!converged);
+
+        // Kill characters on exploded cells.
+        auto killedCharacters = _characters.filter!(c => c.pos in boardAlterations);
+        killedCharacters.each!(c => c.alive = false);
+
+        // Remove exploded bombs.
+        _bombs = _bombs.remove!(b => b.position in explodedBombs);
+
+        // Update the board
+        foreach (pos, colorDist; boardAlterations)
+        {
+            _board.cellAt(pos).explode(colorDist.color);
+        }
     }
 }
