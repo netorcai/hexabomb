@@ -384,19 +384,19 @@ class Game
             auto newlyExplodedBombs = _bombs.filter!(b => !(b.position in explodedBombs)
                                                        &&  (b.position in boardAlterations));
 
-            foreach (b; _bombs)
+            foreach (b; newlyExplodedBombs)
             {
                 explodedBombs[b.position] = b;
                 auto explosion = _board.computeExplosionRange(b);
                 updateBoardAlterations(boardAlterations, explosion, b.color);
             }
 
-            converged = !newlyExplodedBombs.empty;
+            converged = newlyExplodedBombs.empty;
         } while(!converged);
 
         // Kill characters on exploded cells.
         auto killedCharacters = _characters.filter!(c => c.pos in boardAlterations);
-        killedCharacters.each!(c => c.alive = false);
+        killedCharacters.each!((ref c) => c.alive = false);
 
         // Remove exploded bombs.
         _bombs = _bombs.remove!(b => b.position in explodedBombs);
@@ -407,4 +407,118 @@ class Game
             _board.cellAt(pos).explode(colorDist.color);
         }
     }
+    unittest // One single bomb explodes (kill chars and propagate color)
+    {
+        auto bombPosition = Position(0,3);
+        uint bombColor = 1;
+        uint bombRange = 3;
+
+        auto previous = generateBasicGame;
+        auto g = generateBasicGame;
+        assert(g == previous);
+
+        // Insert bomb
+        g._bombs ~= Bomb(bombPosition, bombColor, bombRange, BombType.thin, 2);
+        g._board.cellAt(bombPosition).addBomb;
+        assert(g != previous);
+
+        // First bomb turn (do not explode)
+        g.doBombTurn;
+        assert(g != previous);
+        previous._board.cellAt(bombPosition).addBomb;
+        previous._bombs = [Bomb(bombPosition, bombColor, bombRange, BombType.thin, 1)];
+        assert(g == previous);
+
+        // Second bomb turn (explode)
+        g.doBombTurn;
+        assert(g != previous);
+        previous._bombs = [];
+        auto explosion = previous._board.computeExplosionRange(
+            Bomb(Position(0,3), bombColor, bombRange, BombType.thin, 42));
+
+        foreach (pos; explosion.byKey)
+            previous._board.cellAt(pos).explode(bombColor);
+
+        foreach (ref c; previous._characters)
+            c.alive = false;
+        assert(g == previous);
+
+        // Third turn (no bombs: nothing happens)
+        g.doBombTurn;
+        assert(g == previous);
+    }
+
+    override bool opEquals(const Object o) const
+    {
+        auto g = cast(const Game) o;
+        return (this._board == g._board) &&
+               (this._bombs == g._bombs) &&
+               (this._characters == g._characters) &&
+               (this._initialPositions == g._initialPositions);
+    }
+
+    override string toString()
+    {
+        return format!"{bombs=%s, characters=%s, initialPositions=%s, board=%s}"(
+            _bombs, _characters, _initialPositions, _board);
+        /+    private
+    {
+        Board _board;
+        Bomb[] _bombs;
+        Character[] _characters;
+
+        Position[][int] _initialPositions; /// Initial positions for each color
+    }+/
+    }
+}
+
+private Game generateBasicGame()
+{
+    auto g = new Game(`{
+      "cells":[
+        {"q":-3,"r":0,"wall":false},
+        {"q":-3,"r":1,"wall":false},
+        {"q":-3,"r":2,"wall":false},
+        {"q":-3,"r":3,"wall":false},
+        {"q":-2,"r":-1,"wall":false},
+        {"q":-2,"r":0,"wall":false},
+        {"q":-2,"r":1,"wall":false},
+        {"q":-2,"r":2,"wall":false},
+        {"q":-2,"r":3,"wall":false},
+        {"q":-1,"r":-2,"wall":false},
+        {"q":-1,"r":-1,"wall":false},
+        {"q":-1,"r":0,"wall":false},
+        {"q":-1,"r":1,"wall":false},
+        {"q":-1,"r":2,"wall":false},
+        {"q":-1,"r":3,"wall":false},
+        {"q":0,"r":-3,"wall":false},
+        {"q":0,"r":-2,"wall":false},
+        {"q":0,"r":-1,"wall":false},
+        {"q":0,"r":0,"wall":false},
+        {"q":0,"r":1,"wall":false},
+        {"q":0,"r":2,"wall":false},
+        {"q":0,"r":3,"wall":false},
+        {"q":1,"r":-3,"wall":false},
+        {"q":1,"r":-2,"wall":false},
+        {"q":1,"r":-1,"wall":false},
+        {"q":1,"r":0,"wall":false},
+        {"q":1,"r":1,"wall":false},
+        {"q":1,"r":2,"wall":false},
+        {"q":2,"r":-3,"wall":false},
+        {"q":2,"r":-2,"wall":false},
+        {"q":2,"r":-1,"wall":false},
+        {"q":2,"r":0,"wall":false},
+        {"q":2,"r":1,"wall":false},
+        {"q":3,"r":-3,"wall":false},
+        {"q":3,"r":-2,"wall":false},
+        {"q":3,"r":-1,"wall":false},
+        {"q":3,"r":0,"wall":false}],
+      "initial_positions":{
+        "0": [{"q":0, "r":0}],
+        "1": [{"q":0, "r":1}]
+      }
+    }`.parseJSON);
+
+    g.placeInitialCharacters(2);
+    return g;
 }

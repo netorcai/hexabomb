@@ -162,6 +162,11 @@ struct Cell
         c.addBomb;
         assert(c.hasBomb == true);
 
+        c.explode(4);
+        assert(c.color == 4);
+        assert(c.hasBomb == false);
+        assert(c.hasCharacter == false);
+
         c = Cell();
         c.addWall;
         assert(c.isWall);

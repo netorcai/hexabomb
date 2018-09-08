@@ -78,6 +78,8 @@ struct Position
     unittest
     {
         assert(Position(0,0) == Position(0,0));
+        assert(Position(0,1) != Position(1,0));
+        assert(Position(4,2) == Position(4,2));
         assert(Position(0,1) != Position(0,0));
         assert(Position(0,0) != Position(0,1));
     }
@@ -547,6 +549,33 @@ class Board
     {
         auto b = cast(const Board) o;
         return (this._cells == b._cells) && (this._neighbors == b._neighbors);
+    }
+    unittest
+    {
+        Board b1, b2;
+        assert(b1 == b2);
+
+        b1 = generateEmptyBoard;
+        b2 = generateEmptyBoard;
+        assert(b1 == b2);
+
+        b1.addCell(Position(4, 0), Cell());
+        assert(b1 != b2);
+        b2.addCell(Position(4, 0), Cell());
+        assert(b1 == b2);
+
+        b1.updateNeighborsCache;
+        assert(b1 != b2);
+        b2.updateNeighborsCache;
+        assert(b1 == b2);
+
+        b1.updateNeighborsCache;
+        assert(b1 == b2);
+    }
+
+    override string toString()
+    {
+        return format!"{cells:%s, neighors:%s}"(_cells, _neighbors);
     }
 
     JSONValue toJSON() const
