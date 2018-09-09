@@ -541,6 +541,59 @@ class Game
         ];
         colorAlterations.each!((pos, color) => previous._board.cellAt(pos).explode(color));
         assert(g == previous);
+
+        // Second turn (does nothing)
+        g.doBombTurn;
+        assert(g == previous);
+    }
+    unittest // Two bombs (NO domino effect)
+    {
+        auto previous = generateBasicGame;
+        auto g = generateBasicGame;
+
+        // Insert bombs
+        Bomb[] bombs = [
+            Bomb(Position(-3, 0), 1, 3, BombType.thin, 1),
+            Bomb(Position(1, 0), 2, 4, BombType.fat, 2),
+        ];
+
+        // Insert bombs
+        g._bombs = bombs.dup;
+        g._bombs.each!(b => g._board.cellAt(b.position).addBomb);
+        assert(g != previous);
+
+        previous._bombs = bombs.dup;
+        previous._bombs.each!(b => previous._board.cellAt(b.position).addBomb);
+        assert(g == previous);
+
+        // First turn. Thin bomb explodes alone (kills first character).
+        g.doBombTurn;
+        assert(g != previous);
+
+        foreach (pos; previous._board.computeExplosionRange(bombs[0]).byKey)
+        {
+            previous._board.cellAt(pos).explode(bombs[0].color);
+        }
+        previous._bombs = bombs[1..$];
+        previous._bombs[0].delay = 1;
+        previous._characters[0].alive = false;
+        assert(g == previous);
+
+        // Second turn. Fat bomb explodes alone (recovers all cells, kills c2)
+        g.doBombTurn;
+        assert(g != previous);
+
+        foreach (pos; previous._board.computeExplosionRange(bombs[1]).byKey)
+        {
+            previous._board.cellAt(pos).explode(bombs[1].color);
+        }
+        previous._bombs = [];
+        previous._characters[1].alive = false;
+        assert(g == previous);
+
+        // Third turn. Does nothing.
+        g.doBombTurn;
+        assert(g == previous);
     }
 
     override bool opEquals(const Object o) const
