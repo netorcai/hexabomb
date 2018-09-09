@@ -461,14 +461,27 @@ class Game
     {
         return format!"{bombs=%s, characters=%s, initialPositions=%s, board=%s}"(
             _bombs, _characters, _initialPositions, _board);
-        /+    private
+    }
+    unittest
     {
-        Board _board;
-        Bomb[] _bombs;
-        Character[] _characters;
+        auto g = new Game(`{
+          "cells":[
+            {"q":0,"r":0,"wall":false},
+            {"q":0,"r":1,"wall":false}
+          ],
+          "initial_positions":{
+            "0": [{"q":0, "r":0}],
+            "1": [{"q":0, "r":1}]
+          }
+        }`.parseJSON);
+        assert(g.toString == `{bombs=[], characters=[], initialPositions=[0:[{q=0,r=0}], 1:[{q=0,r=1}]], board={cells:[{q=0,r=1}:{color=0}, {q=0,r=0}:{color=0}], neighbors:[{q=0,r=1}:[{q=0,r=0}], {q=0,r=0}:[{q=0,r=1}]]}}`);
 
-        Position[][int] _initialPositions; /// Initial positions for each color
-    }+/
+        g.placeInitialCharacters(2);
+        assert(g.toString == `{bombs=[], characters=[Character(0, 1, true, {q=0,r=0}), Character(1, 2, true, {q=0,r=1})], initialPositions=[0:[{q=0,r=0}], 1:[{q=0,r=1}]], board={cells:[{q=0,r=1}:{color=0}, {q=0,r=0}:{color=0}], neighbors:[{q=0,r=1}:[{q=0,r=0}], {q=0,r=0}:[{q=0,r=1}]]}}`);
+
+        g._bombs = [Bomb(Position(0,0), 1, 1, BombType.thin, 1)];
+        g._board.cellAt(Position(0,0)).addBomb;
+        assert(g.toString == `{bombs=[Bomb({q=0,r=0}, 1, 1, thin, 1)], characters=[Character(0, 1, true, {q=0,r=0}), Character(1, 2, true, {q=0,r=1})], initialPositions=[0:[{q=0,r=0}], 1:[{q=0,r=1}]], board={cells:[{q=0,r=1}:{color=0}, {q=0,r=0}:{color=0,bomb}], neighbors:[{q=0,r=1}:[{q=0,r=0}], {q=0,r=0}:[{q=0,r=1}]]}}`);
     }
 }
 

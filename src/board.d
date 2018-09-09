@@ -575,7 +575,20 @@ class Board
 
     override string toString()
     {
-        return format!"{cells:%s, neighors:%s}"(_cells, _neighbors);
+        return format!"{cells:%s, neighbors:%s}"(_cells, _neighbors);
+    }
+    unittest
+    {
+        auto b = new Board;
+        assert(b.toString == "{cells:[], neighbors:[]}");
+
+        b._cells = [
+            Position(0,0): Cell(1, false, true, false),
+            Position(0,1): Cell(2, true, false, false)];
+        assert(b.toString == "{cells:[{q=0,r=0}:{color=1,bomb}, {q=0,r=1}:{color=2,char}], neighbors:[]}");
+
+        b.updateNeighborsCache;
+        assert(b.toString == "{cells:[{q=0,r=0}:{color=1,bomb}, {q=0,r=1}:{color=2,char}], neighbors:[{q=0,r=1}:[{q=0,r=0}], {q=0,r=0}:[{q=0,r=1}]]}");
     }
 
     JSONValue toJSON() const
