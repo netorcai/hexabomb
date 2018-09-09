@@ -447,6 +447,101 @@ class Game
         g.doBombTurn;
         assert(g == previous);
     }
+    unittest // Several bombs (domino effect)
+    {
+        auto previous = generateBasicGame;
+        Game g = generateBasicGame;
+
+        // Set some cells to color 42
+        Position[] pos42 = [
+            Position(0,0),
+            Position(0,1),
+            Position(0,2),
+            Position(0,3),
+            Position(1,2)
+        ];
+        pos42.each!(pos => g._board.cellAt(pos).explode(42));
+        pos42.each!(pos => previous._board.cellAt(pos).explode(42));
+
+        Bomb genBomb(Position pos, uint color)
+        {
+            return Bomb(pos, color, 10, BombType.thin, 10);
+        }
+        Bomb[] bombs = [
+            // Central bomb
+            Bomb(Position(0,0), 50, 10, BombType.thin, 1),
+            // Border bombs
+            genBomb(Position( 3, 0), 1),
+            genBomb(Position( 3,-3), 2),
+            genBomb(Position( 0,-3), 3),
+            genBomb(Position(-3, 0), 4),
+            genBomb(Position(-3, 3), 5),
+            genBomb(Position( 0, 3), 6),
+            genBomb(Position( 2, 1), 6),
+        ];
+
+        // Insert bombs
+        g._bombs = bombs.dup;
+        g._bombs.each!(b => g._board.cellAt(b.position).addBomb);
+        assert(g != previous);
+
+        previous._bombs = bombs.dup;
+        previous._bombs.each!(b => previous._board.cellAt(b.position).addBomb);
+        assert(g == previous);
+
+        // First turn (central bomb explode -> all bombs explode)
+        g.doBombTurn;
+        previous._bombs = [];
+        previous._characters.each!((ref c) => c.alive = false);
+
+        uint[Position] colorAlterations = [
+            // Newly central (50)
+            Position( 0, 0): 50,
+            Position( 1, 0): 50,
+            Position( 1,-1): 50,
+            Position( 0,-1): 50,
+            Position(-1, 0): 50,
+            Position(-1, 1): 50,
+            Position( 0, 1): 50,
+            // Newly 1
+            Position( 3, 0): 1,
+            Position( 3,-1): 1,
+            // Newly 2
+            Position( 3,-3): 2,
+            Position( 3,-2): 2,
+            Position( 2,-2): 2,
+            Position( 2,-3): 2,
+            // Newly 3
+            Position( 0,-3): 3,
+            Position( 1,-3): 3,
+            Position( 0,-2): 3,
+            Position(-1,-2): 3,
+            // Newly 4
+            Position(-3, 0): 4,
+            Position(-2,-1): 4,
+            Position(-2, 0): 4,
+            Position(-3, 1): 4,
+            // Newly 5
+            Position(-3, 3): 5,
+            Position(-3, 2): 5,
+            Position(-2, 2): 5,
+            Position(-2, 3): 5,
+            // Newly 6 ( 0, 3)
+            Position( 0, 3): 6,
+            Position(-1, 3): 6,
+            Position( 0, 2): 6,
+            Position( 1, 2): 6, // shared with bomb( 2, 1) of same color
+            // Newly 6 ( 2, 1)
+            Position( 2, 1): 6,
+            Position( 1, 1): 6,
+            Position(-2, 1): 6,
+            Position( 2,-1): 6,
+            // Newly neutral
+            Position( 2, 0): 0, // (3,0), (2,1)
+        ];
+        colorAlterations.each!((pos, color) => previous._board.cellAt(pos).explode(color));
+        assert(g == previous);
+    }
 
     override bool opEquals(const Object o) const
     {
