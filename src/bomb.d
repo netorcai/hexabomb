@@ -47,4 +47,29 @@ struct Bomb
     @property void delay(in uint delay) pure @safe @nogc
     out { assert(_delay == delay); }
     body { _delay = delay; }
+
+    unittest
+    {
+        Bomb b;
+        assert(b.position == Position(-42,-42));
+        assert(b.color == 0);
+        assert(b.range == 1);
+        assert(b.type == BombType.thin);
+        assert(b.delay == 1);
+
+        b.position = Position(0,0);
+        assert(b.position == Position(0,0));
+
+        b.color = 3;
+        assert(b.color == 3);
+
+        b.range = 5;
+        assert(b.range == 5);
+
+        b.type = BombType.fat;
+        assert(b.type == BombType.fat);
+
+        b.delay = 10;
+        assert(b.delay == 10);
+    }
 }
