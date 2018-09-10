@@ -180,6 +180,12 @@ class Game
     {
         assert(_characters.empty);
     }
+    out
+    {
+        assert(_characters.length == nbPlayers);
+        foreach(c; _characters)
+            assert(_board.cellAt(c.pos).hasCharacter);
+    }
     body
     {
         enforce(_initialPositions.length >= nbPlayers,
@@ -192,6 +198,7 @@ class Game
             foreach(pos; _initialPositions[playerID])
             {
                 Character c = {id: characterID, color:playerID+1, pos:pos};
+                _board.cellAt(c.pos).addCharacter(c.color);
                 _characters ~= c;
                 characterID += 1;
             }
@@ -726,11 +733,11 @@ class Game
         assert(g.toString == `{bombs=[], characters=[], initialPositions=[0:[{q=0,r=0}], 1:[{q=0,r=1}]], board={cells:[{q=0,r=0}:{color=0}, {q=0,r=1}:{color=0}], neighbors:[{q=0,r=0}:[{q=0,r=1}], {q=0,r=1}:[{q=0,r=0}]]}}`);
 
         g.placeInitialCharacters(2);
-        assert(g.toString == `{bombs=[], characters=[Character(0, 1, true, {q=0,r=0}), Character(1, 2, true, {q=0,r=1})], initialPositions=[0:[{q=0,r=0}], 1:[{q=0,r=1}]], board={cells:[{q=0,r=0}:{color=0}, {q=0,r=1}:{color=0}], neighbors:[{q=0,r=0}:[{q=0,r=1}], {q=0,r=1}:[{q=0,r=0}]]}}`);
+        assert(g.toString == `{bombs=[], characters=[Character(0, 1, true, {q=0,r=0}), Character(1, 2, true, {q=0,r=1})], initialPositions=[0:[{q=0,r=0}], 1:[{q=0,r=1}]], board={cells:[{q=0,r=0}:{color=1,char}, {q=0,r=1}:{color=2,char}], neighbors:[{q=0,r=0}:[{q=0,r=1}], {q=0,r=1}:[{q=0,r=0}]]}}`);
 
         g._bombs = [Bomb(Position(0,0), 1, 1, BombType.thin, 1)];
         g._board.cellAt(Position(0,0)).addBomb;
-        assert(g.toString == `{bombs=[Bomb({q=0,r=0}, 1, 1, thin, 1)], characters=[Character(0, 1, true, {q=0,r=0}), Character(1, 2, true, {q=0,r=1})], initialPositions=[0:[{q=0,r=0}], 1:[{q=0,r=1}]], board={cells:[{q=0,r=0}:{color=0,bomb}, {q=0,r=1}:{color=0}], neighbors:[{q=0,r=0}:[{q=0,r=1}], {q=0,r=1}:[{q=0,r=0}]]}}`);
+        assert(g.toString == `{bombs=[Bomb({q=0,r=0}, 1, 1, thin, 1)], characters=[Character(0, 1, true, {q=0,r=0}), Character(1, 2, true, {q=0,r=1})], initialPositions=[0:[{q=0,r=0}], 1:[{q=0,r=1}]], board={cells:[{q=0,r=0}:{color=1,char,bomb}, {q=0,r=1}:{color=2,char}], neighbors:[{q=0,r=0}:[{q=0,r=1}], {q=0,r=1}:[{q=0,r=0}]]}}`);
     }
 }
 
