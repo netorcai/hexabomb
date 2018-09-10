@@ -586,7 +586,14 @@ class Board
 
     override string toString()
     {
-        return format!"{cells:%s, neighbors:%s}"(_cells, _neighbors);
+        // Explicitly sort the data for deterministic prints
+        import std.algorithm;
+        import std.array;
+
+        return format!"{cells:[%s], neighbors:[%s]}"(
+            _cells.keys.sort.map!(pos => format!"%s:%s"(pos,_cells[pos])).join(", "),
+            _neighbors.keys.sort.map!(pos => format!"%s:%s"(pos, _neighbors[pos].sort)).join(", ")
+        );
     }
     unittest
     {
@@ -599,7 +606,7 @@ class Board
         assert(b.toString == "{cells:[{q=0,r=0}:{color=1,bomb}, {q=0,r=1}:{color=2,char}], neighbors:[]}");
 
         b.updateNeighborsCache;
-        assert(b.toString == "{cells:[{q=0,r=0}:{color=1,bomb}, {q=0,r=1}:{color=2,char}], neighbors:[{q=0,r=1}:[{q=0,r=0}], {q=0,r=0}:[{q=0,r=1}]]}");
+        assert(b.toString == "{cells:[{q=0,r=0}:{color=1,bomb}, {q=0,r=1}:{color=2,char}], neighbors:[{q=0,r=0}:[{q=0,r=1}], {q=0,r=1}:[{q=0,r=0}]]}");
     }
 
     JSONValue toJSON() const

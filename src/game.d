@@ -700,8 +700,16 @@ class Game
 
     override string toString()
     {
-        return format!"{bombs=%s, characters=%s, initialPositions=%s, board=%s}"(
-            _bombs, _characters, _initialPositions, _board);
+        // Explicitly sort the data for deterministic prints
+        import std.algorithm;
+        import std.array;
+
+        return format!"{bombs=%s, characters=%s, initialPositions=[%s], board=%s}"(
+            _bombs.sort!"a.position < b.position",
+            _characters,
+            _initialPositions.keys.map!(color => format!"%s:%s"(color, _initialPositions[color].sort)).join(", "),
+            _board.toString
+        );
     }
     unittest
     {
@@ -715,14 +723,14 @@ class Game
             "1": [{"q":0, "r":1}]
           }
         }`.parseJSON);
-        assert(g.toString == `{bombs=[], characters=[], initialPositions=[0:[{q=0,r=0}], 1:[{q=0,r=1}]], board={cells:[{q=0,r=1}:{color=0}, {q=0,r=0}:{color=0}], neighbors:[{q=0,r=1}:[{q=0,r=0}], {q=0,r=0}:[{q=0,r=1}]]}}`);
+        assert(g.toString == `{bombs=[], characters=[], initialPositions=[0:[{q=0,r=0}], 1:[{q=0,r=1}]], board={cells:[{q=0,r=0}:{color=0}, {q=0,r=1}:{color=0}], neighbors:[{q=0,r=0}:[{q=0,r=1}], {q=0,r=1}:[{q=0,r=0}]]}}`);
 
         g.placeInitialCharacters(2);
-        assert(g.toString == `{bombs=[], characters=[Character(0, 1, true, {q=0,r=0}), Character(1, 2, true, {q=0,r=1})], initialPositions=[0:[{q=0,r=0}], 1:[{q=0,r=1}]], board={cells:[{q=0,r=1}:{color=0}, {q=0,r=0}:{color=0}], neighbors:[{q=0,r=1}:[{q=0,r=0}], {q=0,r=0}:[{q=0,r=1}]]}}`);
+        assert(g.toString == `{bombs=[], characters=[Character(0, 1, true, {q=0,r=0}), Character(1, 2, true, {q=0,r=1})], initialPositions=[0:[{q=0,r=0}], 1:[{q=0,r=1}]], board={cells:[{q=0,r=0}:{color=0}, {q=0,r=1}:{color=0}], neighbors:[{q=0,r=0}:[{q=0,r=1}], {q=0,r=1}:[{q=0,r=0}]]}}`);
 
         g._bombs = [Bomb(Position(0,0), 1, 1, BombType.thin, 1)];
         g._board.cellAt(Position(0,0)).addBomb;
-        assert(g.toString == `{bombs=[Bomb({q=0,r=0}, 1, 1, thin, 1)], characters=[Character(0, 1, true, {q=0,r=0}), Character(1, 2, true, {q=0,r=1})], initialPositions=[0:[{q=0,r=0}], 1:[{q=0,r=1}]], board={cells:[{q=0,r=1}:{color=0}, {q=0,r=0}:{color=0,bomb}], neighbors:[{q=0,r=1}:[{q=0,r=0}], {q=0,r=0}:[{q=0,r=1}]]}}`);
+        assert(g.toString == `{bombs=[Bomb({q=0,r=0}, 1, 1, thin, 1)], characters=[Character(0, 1, true, {q=0,r=0}), Character(1, 2, true, {q=0,r=1})], initialPositions=[0:[{q=0,r=0}], 1:[{q=0,r=1}]], board={cells:[{q=0,r=0}:{color=0,bomb}, {q=0,r=1}:{color=0}], neighbors:[{q=0,r=0}:[{q=0,r=1}], {q=0,r=1}:[{q=0,r=0}]]}}`);
     }
 }
 
