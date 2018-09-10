@@ -68,7 +68,7 @@ struct Position
         assert(Position(5,7) - Position(2,1) == Position(3,6));
     }
 
-    int opCmp(ref const Position oth) const
+    int opCmp(const Position oth) const
     {
         if (q == oth.q)
             return r - oth.r;
@@ -82,6 +82,17 @@ struct Position
         assert(Position(4,2) == Position(4,2));
         assert(Position(0,1) != Position(0,0));
         assert(Position(0,0) != Position(0,1));
+
+        assert(Position(0,0) <= Position(0,0));
+        assert(Position(0,0) >= Position(0,0));
+
+        assert(Position(0,1) > Position(0,0));
+        assert(Position(1,0) > Position(0,0));
+        assert(Position(1,0) > Position(0,1));
+
+        assert(Position(0,0) < Position(0,1));
+        assert(Position(0,0) < Position(1,0));
+        assert(Position(0,1) < Position(1,0));
     }
 }
 
