@@ -1,6 +1,7 @@
 import std.algorithm;
 import std.conv;
 import std.exception;
+import std.experimental.logger;
 import std.format;
 import std.json;
 import std.range;
@@ -8,6 +9,7 @@ import std.typecons;
 
 import netorcai.json_util;
 
+import actions;
 import board;
 import bomb;
 
@@ -323,6 +325,97 @@ class Game
               {"id":1, "color":2, "q":0, "r":1, "alive":true}
             ]
           }`.parseJSON.toString);
+    }
+
+    /// Applies the actions of the players (move characters, drop bombs)...
+    /*private void applyPlayersActions(PlayerActions[uint] playerActions)
+    {
+    }*/
+
+    /// Applies a single action on the game. Returns whether this could be done. Throws Exception on error.
+    private bool applyAction(in CharacterActions action, in uint color)
+    in
+    {
+        assert([CharacterMovement.revive,
+                CharacterMovement.bomb,
+                CharacterMovement.move].canFind(action.movement),
+               format!"Single movement expected, got %s"(action.movement));
+    }
+    body
+    {
+        enforce(action.characterID < _characters.length,
+            format!"Character id=%s does not exist."(action.characterID));
+        auto c = &(_characters[action.characterID]);
+        enforce(c.color == color,
+            format!"Character id=%s can only follow orders from player with color=%d"(c.id, c.color));
+
+        switch (action.movement)
+        {
+            case CharacterMovement.revive:
+                enforce(c.alive == false,
+                    format!"Character id=%s cannot be revived (already alive)"(c.id));
+
+                auto cell = _board.cellAtOrNull(action.revivePosition);
+                enforce(cell !is null,
+                    format!"Character id=%s cannot be revived (no cell at %s)"(c.id, action.revivePosition));
+                enforce(!cell.isWall,
+                    format!"Character id=%s cannot be revived (cell at %s is a wall)"(c.id, action.revivePosition));
+
+                // Not traversable because of a bomb or a player.
+                // This may be invalid because of recent actions from other players.
+                // This may become valid after actions from other players in the current turn.
+                if (!cell.isTraversable)
+                    return false;
+
+                // Everything seems fine. We can revive the player.
+                c.alive = true;
+                c.pos = action.revivePosition;
+                cell.addCharacter(c.color);
+                return true;
+
+            case CharacterMovement.move:
+                enforce(c.alive == true,
+                    format!"Character id=%s cannot be moved (not alive)"(c.id));
+
+                auto nextPosition = c.pos + action.direction;
+                auto nextCell = _board.cellAtOrNull(nextPosition);
+                enforce(nextCell !is null,
+                    format!"Character id=%s cannot be moved (no cell at %s)"(c.id, nextPosition));
+                enforce(!nextCell.isWall,
+                    format!"Character id=%s cannot be moved (cell at %s is a wall)"(c.id, nextPosition));
+
+                // Not traversable because of a bomb or a player.
+                // This may be invalid because of recent actions from other players.
+                // This may become valid after actions from other players in the current turn.
+                if (!nextCell.isTraversable)
+                    return false;
+
+                // Everything seems fine. We can move the player.
+                c.pos = nextPosition;
+                _board.cellAt(c.pos).removeCharacter;
+                nextCell.addCharacter(c.color);
+                return true;
+
+            case CharacterMovement.bomb:
+                enforce(c.alive == true,
+                    format!"Character id=%s cannot spawn a bomb (not alive)"(c.id));
+
+                auto cell = _board.cellAt(c.pos);
+                enforce(!cell.hasBomb,
+                    format!"Character id=%s cannot spawn a bomb (cell is already bombed)"(c.id));
+
+                // Everything seems fine. We can spawn the bomb.
+                cell.addBomb;
+                _bombs ~= Bomb(c.pos, c.color, action.bombRange, action.bombType, action.bombDelay);
+                return true;
+
+            default:
+                assert(0);
+        }
+    }
+    unittest
+    {
+        // TODO.
     }
 
     /**
