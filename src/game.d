@@ -398,8 +398,8 @@ class Game
                     return false;
 
                 // Everything seems fine. We can move the player.
-                c.pos = nextPosition;
                 _board.cellAt(c.pos).removeCharacter;
+                c.pos = nextPosition;
                 nextCell.addCharacter(c.color);
                 return true;
 
