@@ -292,6 +292,7 @@ struct CharacterActions
 
 struct PlayerActions
 {
+    uint color; // The color of the player that caused the actions
     CharacterActions[] firstActions; /// Single actions or first part of bombMove and moveBomb
     CharacterActions[] secondActions; /// Second part of bombMove and moveBomb
 

@@ -337,9 +337,61 @@ class Game
     }
 
     /// Applies the actions of the players (move characters, drop bombs)...
-    /*private void applyPlayersActions(PlayerActions[uint] playerActions)
+    private void applyPlayersActions(PlayerActions[] playerActions)
     {
-    }*/
+        /+ Taking actions into account is done in two rounds.
+           1. First round consists in atomic actions (bomb/move/revive)
+              and the first of composed actions (bomb from bombMove,
+              move from moveBomb)
+           2. Second round adds the second part of composed actions.
+
+           The actions of each round are applied until convergence, to allow
+           valid moves that depend on other players.
+           As an example, think of adjacent characters that want to move in the
+           same direction. They should be able to do it regardless of the order
+           of events.
+
+           The pending actions from round 1 are not kept in round 2,
+           as it seems impossible that round 2 actions make them possible:
+           - bombMove does not allow more possibilites for other characters
+             (decreases the liberties for revive and move)
+           - moveBomb allows more possibilities, but the move part is in round 1
+        +/
+        alias ActionElement = Tuple!(CharacterActions, "action", uint, "color", bool, "toRemove");
+
+        void doActionRound(ActionElement[] pendingActions)
+        {
+            bool converged = false;
+            do
+            {
+                foreach (i, ref a; pendingActions)
+                {
+                    try
+                    {
+                        if (applyAction(a.action, a.color))
+                            a.toRemove = true;
+                    }
+                    catch(Exception e)
+                    {
+                        info("Ignoring a character action: ", e.msg);
+                        a.toRemove = true;
+                    }
+                }
+
+                auto remainingActions = pendingActions.remove!"a.toRemove == true";
+                converged = remainingActions.length == pendingActions.length;
+                pendingActions = remainingActions;
+            } while (!converged);
+        }
+
+        // First round
+        ActionElement[] pendingActions = playerActions.map!(pa=> pa.firstActions.map!(a => ActionElement(a, pa.color, false))).join;
+        doActionRound(pendingActions);
+
+        // Second round
+        pendingActions = playerActions.map!(pa=> pa.secondActions.map!(a => ActionElement(a, pa.color, false))).join;
+        doActionRound(pendingActions);
+    }
 
     /// Applies a single action on the game. Returns whether this could be done. Throws Exception on error.
     private bool applyAction(in CharacterActions action, in uint color)
