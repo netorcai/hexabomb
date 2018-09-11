@@ -296,10 +296,16 @@ struct PlayerActions
     CharacterActions[] firstActions; /// Single actions or first part of bombMove and moveBomb
     CharacterActions[] secondActions; /// Second part of bombMove and moveBomb
 
-    this(in JSONValue array)
+    this(uint color, in JSONValue actionsArray)
+    {
+        this.color = color;
+        parseActions(actionsArray);
+    }
+
+    private void parseActions(in JSONValue array)
     {
         enforce(array.type == JSON_TYPE.ARRAY,
-            "PlayerActions value is not an array");
+            "actions is not an array");
 
         CharacterActions[] actions;
         foreach(e; array.array)
@@ -329,42 +335,42 @@ struct PlayerActions
     {
         string s = `{}`;
         PlayerActions pa;
-        assertThrown(PlayerActions(s.parseJSON));
-        assert(collectExceptionMsg(PlayerActions(s.parseJSON)) ==
-            `PlayerActions value is not an array`);
+        assertThrown(PlayerActions(1, s.parseJSON));
+        assert(collectExceptionMsg(PlayerActions(1, s.parseJSON)) ==
+            `actions is not an array`);
 
         s = `[]`;
-        assertNotThrown(pa = PlayerActions(s.parseJSON));
+        assertNotThrown(pa = PlayerActions(1, s.parseJSON));
         assert(pa.firstActions.length == 0);
         assert(pa.secondActions.length == 0);
 
         s = `[4]`;
-        assertNotThrown(pa = PlayerActions(s.parseJSON));
+        assertNotThrown(pa = PlayerActions(1, s.parseJSON));
         assert(pa.firstActions.length == 0);
         assert(pa.secondActions.length == 0);
 
         s = `[{"id":0, "movement":"revive", "revive_q":0, "revive_r":0}]`;
-        assertNotThrown(pa = PlayerActions(s.parseJSON));
+        assertNotThrown(pa = PlayerActions(1, s.parseJSON));
         assert(pa.firstActions.length == 1);
         assert(pa.secondActions.length == 0);
 
         s = `[{"id":0, "movement":"bomb", "bomb_type": "fat",
                "bomb_range":2, "bomb_delay":3, "direction":"x-"},
               {"id":0, "movement":"move", "direction":"z-"}]`;
-        assertNotThrown(pa = PlayerActions(s.parseJSON));
+        assertNotThrown(pa = PlayerActions(1, s.parseJSON));
         assert(pa.firstActions.length == 1);
         assert(pa.secondActions.length == 0);
 
         s = `[{"id":0, "movement":"move", "direction":"z+"},
               {"id":1, "movement":"move", "direction":"z-"}]`;
-        assertNotThrown(pa = PlayerActions(s.parseJSON));
+        assertNotThrown(pa = PlayerActions(1, s.parseJSON));
         assert(pa.firstActions.length == 2);
         assert(pa.secondActions.length == 0);
 
         s = `[{"id":0, "movement":"move", "direction":"z+"},
               {"id":1, "movement":"bombMove", "bomb_type": "fat",
                "bomb_range":2, "bomb_delay":3, "direction":"x-"}]`;
-        assertNotThrown(pa = PlayerActions(s.parseJSON));
+        assertNotThrown(pa = PlayerActions(1, s.parseJSON));
         assert(pa.firstActions.length == 2);
         assert(pa.firstActions[0].movement == CharacterMovement.move);
         assert(pa.firstActions[1].movement == CharacterMovement.bomb);
@@ -374,7 +380,7 @@ struct PlayerActions
         s = `[{"id":1, "movement":"moveBomb", "bomb_type": "fat",
                "bomb_range":2, "bomb_delay":3, "direction":"x-"},
               {"id":0, "movement":"move", "direction":"z+"}]`;
-        assertNotThrown(pa = PlayerActions(s.parseJSON));
+        assertNotThrown(pa = PlayerActions(1, s.parseJSON));
         assert(pa.firstActions.length == 2);
         assert(pa.firstActions[0].movement == CharacterMovement.move);
         assert(pa.firstActions[1].movement == CharacterMovement.move);
