@@ -1,3 +1,4 @@
+import core.exception : AssertError;
 import std.algorithm;
 import std.conv;
 import std.exception;
@@ -12,6 +13,7 @@ import netorcai.json_util;
 import actions;
 import board;
 import bomb;
+import cell;
 
 struct Character
 {
@@ -341,20 +343,13 @@ class Game
 
     /// Applies a single action on the game. Returns whether this could be done. Throws Exception on error.
     private bool applyAction(in CharacterActions action, in uint color)
-    in
-    {
-        assert([CharacterMovement.revive,
-                CharacterMovement.bomb,
-                CharacterMovement.move].canFind(action.movement),
-               format!"Single movement expected, got %s"(action.movement));
-    }
     body
     {
         enforce(action.characterID < _characters.length,
-            format!"Character id=%s does not exist."(action.characterID));
+            format!"Character id=%s does not exist"(action.characterID));
         auto c = &(_characters[action.characterID]);
         enforce(c.color == color,
-            format!"Character id=%s can only follow orders from player with color=%d"(c.id, c.color));
+            format!"Player with color=%d cannot do actions on character (id=%s, color=%d)"(color, c.id, c.color));
 
         switch (action.movement)
         {
@@ -417,12 +412,128 @@ class Game
                 return true;
 
             default:
-                assert(0);
+                throw new Exception(format!"Single movement expected, got %s"(action.movement));
         }
     }
     unittest
     {
-        // TODO.
+        auto g = generateBasicGame;
+        CharacterActions a;
+
+        // Initial game alterations
+        g._board.cellAt(Position(3,-3)).addWall;
+        g._board.cellAt(Position(1,-3)).addBomb;
+        g._bombs ~= Bomb(Position(1,-3), 0, 10, BombType.fat, 100);
+
+        // Invalid character
+        a.characterID = 42;
+        assertThrown(g.applyAction(a, 1));
+        assert(collectExceptionMsg(g.applyAction(a, 1)) ==
+            `Character id=42 does not exist`);
+
+        // Trying to move opponents' characters
+        a.characterID = 0;
+        assertThrown(g.applyAction(a, 10));
+        assert(collectExceptionMsg(g.applyAction(a, 10)) ==
+            `Player with color=10 cannot do actions on character (id=0, color=1)`);
+
+        Character* c = &(g._characters[0]);
+
+        ////////////////
+        // Bad revive //
+        ////////////////
+        // Alive
+        a.movement = CharacterMovement.revive;
+        assertThrown(g.applyAction(a, 1));
+        assert(collectExceptionMsg(g.applyAction(a, 1)) ==
+            `Character id=0 cannot be revived (already alive)`);
+        // Invalid revive position (cell does not exist)
+        g._board.cellAt(c.pos).removeCharacter;
+        c.alive = false;
+        a.revivePosition = Position(42,42);
+        assertThrown(g.applyAction(a, 1));
+        assert(collectExceptionMsg(g.applyAction(a, 1)) ==
+            `Character id=0 cannot be revived (no cell at {q=42,r=42})`);
+        // Invalid revive position (cell is a wall)
+        a.revivePosition = Position(3,-3);
+        assertThrown(g.applyAction(a, 1));
+        assert(collectExceptionMsg(g.applyAction(a, 1)) ==
+            `Character id=0 cannot be revived (cell at {q=3,r=-3} is a wall)`);
+        // Bad revive position (cell is a character)
+        a.revivePosition = Position(0,1);
+        assert(g.applyAction(a, 1) == false);
+        // Bad revive position (cell is a bomb)
+        a.revivePosition = Position(1,-3);
+        assert(g.applyAction(a, 1) == false);
+
+        //////////
+        // move //
+        //////////
+        a.movement = CharacterMovement.move;
+        // Dead
+        assertThrown(g.applyAction(a, 1));
+        assert(collectExceptionMsg(g.applyAction(a, 1)) ==
+            `Character id=0 cannot be moved (not alive)`);
+        // Revive the character
+        a.movement = CharacterMovement.revive;
+        a.revivePosition = Position(2,-3);
+        assert(g.applyAction(a, 1) == true);
+        // Out of bounds
+        a.movement = CharacterMovement.move;
+        a.direction = Direction.Z_PLUS;
+        assertThrown(g.applyAction(a, 1));
+        assert(collectExceptionMsg(g.applyAction(a, 1)) ==
+            `Character id=0 cannot be moved (no cell at {q=2,r=-4})`);
+        // Into wall
+        a.direction = Direction.X_PLUS;
+        assertThrown(g.applyAction(a, 1));
+        assert(collectExceptionMsg(g.applyAction(a, 1)) ==
+            `Character id=0 cannot be moved (cell at {q=3,r=-3} is a wall)`);
+        // Into bomb
+        a.direction = Direction.X_MINUS;
+        assert(g.applyAction(a, 1) == false);
+        // Move next to a character
+        a.direction = Direction.Y_MINUS;
+        assert(g.applyAction(a, 1) == true);
+        assert(g.applyAction(a, 1) == true);
+        a.direction = Direction.Z_MINUS;
+        assert(g.applyAction(a, 1) == true);
+        // Into a character
+        assert(g.applyAction(a, 1) == false);
+
+        //////////
+        // bomb //
+        //////////
+        a.movement = CharacterMovement.bomb;
+        a.bombType = BombType.thin;
+        a.bombRange = 3;
+        a.bombDelay = 2;
+        // OK
+        assert(g.applyAction(a, 1) == true);
+        // Onto a bomb
+        assertThrown(g.applyAction(a, 1));
+        assert(collectExceptionMsg(g.applyAction(a, 1)) ==
+            `Character id=0 cannot spawn a bomb (cell is already bombed)`);
+        // Kill the characters
+        g.doBombTurn;
+        g.doBombTurn;
+        assert(c.alive == false);
+        // Dead
+        assertThrown(g.applyAction(a, 1));
+        assert(collectExceptionMsg(g.applyAction(a, 1)) ==
+            `Character id=0 cannot spawn a bomb (not alive)`);
+
+        ///////////////////////
+        // invalid movements //
+        ///////////////////////
+        a.movement = CharacterMovement.bombMove;
+        assertThrown(g.applyAction(a, 1));
+        assert(collectExceptionMsg(g.applyAction(a, 1)) ==
+            `Single movement expected, got bombMove`);
+        a.movement = CharacterMovement.moveBomb;
+        assertThrown(g.applyAction(a, 1));
+        assert(collectExceptionMsg(g.applyAction(a, 1)) ==
+            `Single movement expected, got moveBomb`);
     }
 
     /**
