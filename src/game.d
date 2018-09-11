@@ -205,6 +205,44 @@ class Game
         assert(g._score[1] == 2);
     }
 
+    private JSONValue describeScore() const
+    out(r)
+    {
+        assert(r.type == JSON_TYPE.OBJECT);
+    }
+    body
+    {
+        JSONValue v = `{}`.parseJSON;
+
+        foreach(playerID, score; _score)
+        {
+            v.object[to!string(playerID)] = score;
+        }
+
+        return v;
+    }
+    unittest
+    {
+        auto g = generateBasicGame;
+        string s = `{
+          "0": 0,
+          "1": 0
+        }`;
+        assert(g.describeScore.toString == s.parseJSON.toString);
+
+        g._score.clear;
+        s = `{}`;
+        assert(g.describeScore.toString == s.parseJSON.toString);
+
+        g._score = [0:5, 1:10, 2:27];
+        s = `{
+          "0": 5,
+          "1": 10,
+          "2": 27
+        }`;
+        assert(g.describeScore.toString == s.parseJSON.toString);
+    }
+
     void initializeGame(in int nbPlayers)
     in
     {
@@ -393,6 +431,7 @@ class Game
         v.object["cells"] = _board.toJSON(false, true);
         v.object["characters"] = describeCharacters;
         v.object["bombs"] = describeBombs;
+        v.object["score"] = describeScore;
 
         return v;
     }
@@ -420,7 +459,11 @@ class Game
             "characters":[
               {"id":0, "color":1, "q":0, "r":0, "alive":true},
               {"id":1, "color":2, "q":0, "r":1, "alive":true}
-            ]
+            ],
+            "score":{
+              "0": 0,
+              "1": 0
+            }
           }`.parseJSON.toString);
     }
 
