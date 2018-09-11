@@ -447,21 +447,41 @@ class Game
 
     private int determineCurrentWinnerPlayerID()
     {
+        if (_score.length == 0)
+            return -1;
+        else if (_score.length == 1)
+            return 0;
+
         import std.typecons;
         alias ScorePid = Tuple!(uint, "score", uint, "playerID");
 
-        auto sortedScores = _score.keys.map!(playerID => ScorePid(_score[playerID], playerID)).array.sort;
+        auto sortedScores = _score.keys.map!(playerID => ScorePid(_score[playerID], playerID)).array.sort!"a > b";
 
-        if (sortedScores.length > 1)
-        {
-            if (sortedScores[0].score > sortedScores[1].score)
-                return sortedScores[0].playerID;
-            return -1;
-        }
-        else if (sortedScores.empty)
-            return -1;
-        else
-            return sortedScores[0].playerID;
+        if (sortedScores[0].score > sortedScores[1].score)
+            return sortedScores[0].playerID; // Strictly first
+        return -1; // Draw
+    }
+    unittest
+    {
+        auto g = generateBasicGame;
+
+        // No player
+        g._score.clear;
+        assert(g.determineCurrentWinnerPlayerID == -1);
+
+        // Single player
+        g._score = [0: 0];
+        assert(g.determineCurrentWinnerPlayerID == 0);
+        g._score = [0: 42];
+        assert(g.determineCurrentWinnerPlayerID == 0);
+
+        // Multiplayer
+        g._score = [0:10, 1:10, 2:11];
+        assert(g.determineCurrentWinnerPlayerID == 2);
+        g._score = [0:20, 1:19, 2:20];
+        assert(g.determineCurrentWinnerPlayerID == -1);
+        g._score = [0:10, 1:13, 2:5, 3:1, 4:5];
+        assert(g.determineCurrentWinnerPlayerID == 1);
     }
 
     /// Applies the actions of the players (move characters, drop bombs)...
