@@ -9,6 +9,7 @@ import std.range;
 import std.typecons;
 
 import netorcai.json_util;
+import nm = netorcai.message;
 
 import actions;
 import board;
@@ -31,6 +32,7 @@ class Game
         Bomb[] _bombs;
         Character[] _characters;
 
+        uint[uint] _score; /// The score of each player
         Position[][int] _initialPositions; /// Initial positions for each color
     }
 
@@ -176,8 +178,51 @@ class Game
             .startsWith("Duplication of initial cell"));
     }
 
+    void updateScore()
+    {
+        uint[uint] count = _board.cellCountPerColor;
+
+        foreach(playerID, ref score; _score)
+        {
+            uint color = playerID + 1;
+            if (color in count)
+                score += count[color];
+        }
+    }
+    unittest
+    {
+        auto g = generateBasicGame;
+        assert(g._score.length == 2);
+        assert(g._score[0] == 0);
+        assert(g._score[1] == 0);
+
+        g.updateScore;
+        assert(g._score[0] == 1);
+        assert(g._score[1] == 1);
+
+        g.updateScore;
+        assert(g._score[0] == 2);
+        assert(g._score[1] == 2);
+    }
+
+    void initializeGame(in int nbPlayers)
+    in
+    {
+        assert(_score.length == 0);
+    }
+    out
+    {
+        assert(_score.length == nbPlayers);
+        _score.each!(s => assert(s == 0));
+    }
+    body
+    {
+        iota(0,nbPlayers).each!(playerID => _score[playerID] = 0);
+        placeInitialCharacters(nbPlayers);
+    }
+
     // Generate the initial characters. Throw Exception on error
-    void placeInitialCharacters(in int nbPlayers)
+    private void placeInitialCharacters(in int nbPlayers)
     in
     {
         assert(_characters.empty);
@@ -304,7 +349,7 @@ class Game
     body
     {
         JSONValue v = `{}`.parseJSON;
-        v.object["cells"] = _board.toJSON;
+        v.object["cells"] = _board.toJSON(true, false);
         v.object["characters"] = describeCharacters;
         v.object["bombs"] = describeBombs;
 
@@ -322,7 +367,7 @@ class Game
             "1": [{"q":0, "r":1}]
           }
         }`.parseJSON);
-        g.placeInitialCharacters(2);
+        g.initializeGame(2);
         assert(g.describeInitialState.toString == `{
             "bombs": [],
             "cells":[
@@ -334,6 +379,89 @@ class Game
               {"id":1, "color":2, "q":0, "r":1, "alive":true}
             ]
           }`.parseJSON.toString);
+    }
+
+    /// Generate a JSON description of the current game state
+    JSONValue describeState() const
+    out(r)
+    {
+        assert(r.type == JSON_TYPE.OBJECT);
+    }
+    body
+    {
+        JSONValue v = `{}`.parseJSON;
+        v.object["cells"] = _board.toJSON(false, true);
+        v.object["characters"] = describeCharacters;
+        v.object["bombs"] = describeBombs;
+
+        return v;
+    }
+    unittest
+    {
+        Game g = new Game(`{
+          "cells":[
+            {"q":0, "r":0, "wall":false},
+            {"q":0, "r":1, "wall":false},
+            {"q":0, "r":2, "wall":false}
+          ],
+          "initial_positions":{
+            "0": [{"q":0, "r":0}],
+            "1": [{"q":0, "r":1}]
+          }
+        }`.parseJSON);
+        g.initializeGame(2);
+        assert(g.describeState.toString == `{
+            "bombs": [],
+            "cells":[
+              {"q":0, "r":0, "color":1},
+              {"q":0, "r":1, "color":2},
+              {"q":0, "r":2, "color":0}
+            ],
+            "characters":[
+              {"id":0, "color":1, "q":0, "r":0, "alive":true},
+              {"id":1, "color":2, "q":0, "r":1, "alive":true}
+            ]
+          }`.parseJSON.toString);
+    }
+
+    void doTurn(in nm.DoTurnMessage msg, out int currentWinnerPlayerID, out JSONValue gameState)
+    {
+        // Retrieve the players actions as the Game understands it
+        PlayerActions[] playerActions = msg.playerActions.map!(npa => PlayerActions(npa.playerID + 1, npa.actions)).array;
+
+        // Update the game state (apply the players' actions)
+        applyPlayersActions(playerActions);
+
+        // Manage bombs: reduce delays, compute explosions...
+        doBombTurn;
+
+        // Compute score
+        updateScore;
+
+        // Determine the current winner (if any)
+        currentWinnerPlayerID = determineCurrentWinnerPlayerID;
+
+        // Update the game state description
+        gameState = describeState;
+    }
+
+    private int determineCurrentWinnerPlayerID()
+    {
+        import std.typecons;
+        alias ScorePid = Tuple!(uint, "score", uint, "playerID");
+
+        auto sortedScores = _score.keys.map!(playerID => ScorePid(_score[playerID], playerID)).array.sort;
+
+        if (sortedScores.length > 1)
+        {
+            if (sortedScores[0].score > sortedScores[1].score)
+                return sortedScores[0].playerID;
+            return -1;
+        }
+        else if (sortedScores.empty)
+            return -1;
+        else
+            return sortedScores[0].playerID;
     }
 
     /// Applies the actions of the players (move characters, drop bombs)...
@@ -951,6 +1079,6 @@ private Game generateBasicGame()
       }
     }`.parseJSON);
 
-    g.placeInitialCharacters(2);
+    g.initializeGame(2);
     return g;
 }

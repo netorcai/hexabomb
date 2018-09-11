@@ -609,7 +609,7 @@ class Board
         assert(b.toString == "{cells:[{q=0,r=0}:{color=1,bomb}, {q=0,r=1}:{color=2,char}], neighbors:[{q=0,r=0}:[{q=0,r=1}], {q=0,r=1}:[{q=0,r=0}]]}");
     }
 
-    JSONValue toJSON() const
+    JSONValue toJSON(bool walls, bool colors) const
     out(r)
     {
         assert(r.type == JSON_TYPE.ARRAY);
@@ -628,7 +628,12 @@ class Board
             JSONValue cellValue = `{}`.parseJSON;
             cellValue.object["q"] = t.position.q;
             cellValue.object["r"] = t.position.r;
-            cellValue.object["wall"] = t.cell.isWall;
+
+            if (walls)
+                cellValue.object["wall"] = t.cell.isWall;
+
+            if (colors)
+                cellValue.object["color"] = t.cell.color;
 
             v.array ~= cellValue;
         }
@@ -645,7 +650,17 @@ class Board
           {"q": 3, "r":-3, "wall": false}
         ]`.parseJSON;
         Board b = new Board(boardDescription);
-        assert(b.toJSON == boardDescription);
+        assert(b.toJSON(true, false) == boardDescription);
+    }
+
+    uint[uint] cellCountPerColor()
+    {
+        import std.algorithm;
+
+        uint[uint] cellCount;
+        _cells.values.each!(c => cellCount[c.color] += 1);
+
+        return cellCount;
     }
 }
 
