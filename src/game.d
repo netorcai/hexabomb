@@ -227,7 +227,7 @@ class Game
 
         foreach(playerID, score; _score)
         {
-            v.object[to!string(playerID)] = score;
+            v.object[to!string(playerID)] = cast(int)score;
         }
 
         return v;
@@ -552,6 +552,150 @@ class Game
 
         // Update the game state description
         gameState = describeState;
+    }
+    unittest
+    {
+        auto g = generateBasicGame;
+        JSONValue gameState;
+        nm.DoTurnMessage doTurnMsg;
+        int currentWinnerPlayerID;
+
+        // No action
+        doTurnMsg = nm.parseDoTurnMessage(`{
+          "message_type": "DO_TURN",
+          "player_actions": []
+        }`.parseJSON);
+        assertNotThrown(g.doTurn(doTurnMsg, currentWinnerPlayerID, gameState));
+        assert(currentWinnerPlayerID == -1);
+        assert(gameState["cell_count"]["0"].getInt == 1);
+        assert(gameState["cell_count"]["1"].getInt == 1);
+        assert(gameState["score"]["0"].getInt == 1);
+        assert(gameState["score"]["1"].getInt == 1);
+
+        // Adjacent move. Both characters should move.
+        doTurnMsg = nm.parseDoTurnMessage(`{
+          "message_type": "DO_TURN",
+          "player_actions": [
+            {"player_id": 0, "turn_number": 1, "actions":[{"id":0, "movement":"move", "direction":"z-"}]},
+            {"player_id": 1, "turn_number": 1, "actions":[{"id":1, "movement":"move", "direction":"z-"}]}
+          ]
+        }`.parseJSON);
+        assertNotThrown(g.doTurn(doTurnMsg, currentWinnerPlayerID, gameState));
+        assert(g._characters[0].pos == Position(0,1)); // Moved
+        assert(g._characters[1].pos == Position(0,2)); // Moved
+        assert(currentWinnerPlayerID == 0);
+        assert(gameState["cell_count"]["0"].getInt == 2);
+        assert(gameState["cell_count"]["1"].getInt == 1);
+        assert(gameState["score"]["0"].getInt == 3);
+        assert(gameState["score"]["1"].getInt == 2);
+
+        // Moving into the same cell. First character to move should win. In this case, character 1 from player_id 1.
+        doTurnMsg = nm.parseDoTurnMessage(`{
+          "message_type": "DO_TURN",
+          "player_actions": [
+            {"player_id": 1, "turn_number": 2, "actions":[{"id":1, "movement":"move", "direction":"y+"}]},
+            {"player_id": 0, "turn_number": 2, "actions":[{"id":0, "movement":"move", "direction":"x+"}]}
+          ]
+        }`.parseJSON);
+        assertNotThrown(g.doTurn(doTurnMsg, currentWinnerPlayerID, gameState));
+        assert(g._characters[0].pos == Position(0,1)); // Did not move
+        assert(g._characters[1].pos == Position(1,1)); // Moved
+        assert(currentWinnerPlayerID == 0);
+        assert(gameState["cell_count"]["0"].getInt == 2);
+        assert(gameState["cell_count"]["1"].getInt == 2);
+        assert(gameState["score"]["0"].getInt == 5);
+        assert(gameState["score"]["1"].getInt == 4);
+
+        // Non-atomic moves.
+        // 1. char0 bombs then flees. Both actions should succeed.
+        // 2. char1 moves into char0 then bombs. Only second action should succeed.
+        doTurnMsg = nm.parseDoTurnMessage(`{
+          "message_type": "DO_TURN",
+          "player_actions": [
+            {"player_id": 0, "turn_number": 3, "actions":[{"id":0, "movement":"bombMove", "direction":"x-", "bomb_type":"thin", "bomb_range":2, "bomb_delay":3}]},
+            {"player_id": 1, "turn_number": 3, "actions":[{"id":1, "movement":"moveBomb", "direction":"x-", "bomb_type":"thin", "bomb_range":2, "bomb_delay":4}]}
+          ]
+        }`.parseJSON);
+        assertNotThrown(g.doTurn(doTurnMsg, currentWinnerPlayerID, gameState));
+        assert(g._characters[0].pos == Position(-1,1)); // Moved
+        assert(g._board.cellAt(Position(0,1)).hasBomb == true);
+        assert(g._board.cellAt(Position(0,1)).color == 1);
+        assert(g._board.cellAt(Position(-1,1)).hasBomb == false);
+        assert(g._characters[1].pos == Position(1,1)); // Did not move
+        assert(g._board.cellAt(Position(1,1)).hasBomb == true);
+        assert(g._board.cellAt(Position(1,1)).color == 2);
+        assert(currentWinnerPlayerID == 0);
+        assert(gameState["bombs"].array.length == 2);
+        assert(gameState["cell_count"]["0"].getInt == 3);
+        assert(gameState["cell_count"]["1"].getInt == 2);
+        assert(gameState["score"]["0"].getInt == 8);
+        assert(gameState["score"]["1"].getInt == 6);
+
+        // Invalid moves. No action should be done this turn.
+        // - player0 action does not exist. This should be wiped out.
+        // - player1 tries to move the opponent's character. This should be ignored.
+        doTurnMsg = nm.parseDoTurnMessage(`{
+          "message_type": "DO_TURN",
+          "player_actions": [
+            {"player_id": 0, "turn_number": 4, "actions":[{"id":0, "movement":"win"}]},
+            {"player_id": 1, "turn_number": 4, "actions":[{"id":0, "movement":"move", "direction":"x-"}]}
+          ]
+        }`.parseJSON);
+        assertNotThrown(g.doTurn(doTurnMsg, currentWinnerPlayerID, gameState));
+        assert(g._characters[0].pos == Position(-1,1)); // Did not move
+        assert(g._characters[1].pos == Position(1,1)); // Did not move
+        assert(currentWinnerPlayerID == 0);
+        assert(gameState["bombs"].array.length == 2);
+        assert(gameState["cell_count"]["0"].getInt == 3);
+        assert(gameState["cell_count"]["1"].getInt == 2);
+        assert(gameState["score"]["0"].getInt == 11);
+        assert(gameState["score"]["1"].getInt == 8);
+
+        // char0 moves to avoid the cascade explosion of this turn. char1 moves but still dies from the explosion.
+        doTurnMsg = nm.parseDoTurnMessage(`{
+          "message_type": "DO_TURN",
+          "player_actions": [
+            {"player_id": 0, "turn_number": 5, "actions":[{"id":0, "movement":"move", "direction":"z+"}]},
+            {"player_id": 1, "turn_number": 5, "actions":[{"id":1, "movement":"move", "direction":"z+"}]}
+          ]
+        }`.parseJSON);
+        assertNotThrown(g.doTurn(doTurnMsg, currentWinnerPlayerID, gameState));
+        assert(g._characters[0].pos == Position(-1,0)); // Moved
+        assert(g._characters[0].alive == true);
+        assert(g._characters[1].pos == Position(1,0)); // Moved
+        assert(g._characters[1].alive == false);
+        assert(g._board.cellAt(Position( 1, 0)).color == 0); // dist=1 with both bombs
+        assert(g._board.cellAt(Position( 2,-1)).color == 1); // dist=2 with bomb0
+        assert(g._board.cellAt(Position( 1,-1)).color == 2); // dist=2 with bomb1
+        assert(g._board.cellAt(Position( 0, 2)).color == 0); // dist=1 with both bombs
+        assert(g._board.cellAt(Position( 0, 3)).color == 1); // dist=2 with bomb0
+        assert(g._board.cellAt(Position(-1, 3)).color == 2); // dist=2 with bomb1
+        assert(currentWinnerPlayerID == 0);
+        assert(gameState["bombs"].array.length == 0);
+        assert(gameState["cell_count"]["0"].getInt == 10);
+        assert(gameState["cell_count"]["1"].getInt == 7);
+        assert(gameState["score"]["0"].getInt == 21);
+        assert(gameState["score"]["1"].getInt == 15);
+
+        // Revive and move.
+        // - char1 tries to revive at char0's position. char0 must first move to enable this.
+        // - char0 just moves.
+        doTurnMsg = nm.parseDoTurnMessage(`{
+          "message_type": "DO_TURN",
+          "player_actions": [
+            {"player_id": 1, "turn_number": 6, "actions":[{"id":1, "movement":"revive", "revive_q":-1, "revive_r":0}]},
+            {"player_id": 0, "turn_number": 6, "actions":[{"id":0, "movement":"move", "direction":"z+"}]}
+          ]
+        }`.parseJSON);
+        assertNotThrown(g.doTurn(doTurnMsg, currentWinnerPlayerID, gameState));
+        assert(g._characters[0].pos == Position(-1,-1)); // Moved
+        assert(g._characters[0].alive == true);
+        assert(g._characters[1].pos == Position(-1,0)); // Moved
+        assert(g._characters[1].alive == true);
+        assert(gameState["cell_count"]["0"].getInt == 10);
+        assert(gameState["cell_count"]["1"].getInt == 8);
+        assert(gameState["score"]["0"].getInt == 31);
+        assert(gameState["score"]["1"].getInt == 23);
     }
 
     private int determineCurrentWinnerPlayerID()
