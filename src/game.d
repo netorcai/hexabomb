@@ -32,8 +32,16 @@ class Game
         Bomb[] _bombs;
         Character[] _characters;
 
+        uint _nbPlayers; /// The number of players in the game. 0 before init, then set to the right value
+        uint[uint] _cellCount; /// The current number of cells of each player
         uint[uint] _score; /// The score of each player
         Position[][int] _initialPositions; /// Initial positions for each color
+    }
+
+    invariant
+    {
+        assert(_cellCount.length == _nbPlayers);
+        assert(_score.length == _nbPlayers);
     }
 
     this(in JSONValue initialMap)
@@ -186,7 +194,10 @@ class Game
         {
             uint color = playerID + 1;
             if (color in count)
+            {
+                _cellCount[playerID] = count[color];
                 score += count[color];
+            }
         }
     }
     unittest
@@ -243,20 +254,70 @@ class Game
         assert(g.describeScore.toString == s.parseJSON.toString);
     }
 
+    private JSONValue describeCellCount() const
+    out(r)
+    {
+        assert(r.type == JSON_TYPE.OBJECT);
+    }
+    body
+    {
+        JSONValue v = `{}`.parseJSON;
+
+        foreach(playerID, nbCells; _cellCount)
+        {
+            v.object[to!string(playerID)] = cast(int)nbCells;
+        }
+
+        return v;
+    }
+    unittest
+    {
+        auto g = generateBasicGame;
+        string s = `{
+          "0": 1,
+          "1": 1
+        }`;
+        import std.stdio; writeln(g.describeCellCount.toString);
+        assert(g.describeCellCount.toString == s.parseJSON.toString);
+
+        g._cellCount.clear;
+        s = `{}`;
+        assert(g.describeCellCount.toString == s.parseJSON.toString);
+
+        g._cellCount = [0:5, 1:10, 2:27];
+        s = `{
+          "0": 5,
+          "1": 10,
+          "2": 27
+        }`;
+        assert(g.describeCellCount.toString == s.parseJSON.toString);
+    }
+
     void initializeGame(in int nbPlayers)
     in
     {
         assert(_score.length == 0);
+        assert(_cellCount.length == 0);
     }
     out
     {
         assert(_score.length == nbPlayers);
+        assert(_cellCount.length == nbPlayers);
         _score.each!(s => assert(s == 0));
+        _cellCount.each!(c => assert(c > 0));
     }
     body
     {
+        _nbPlayers = nbPlayers;
         iota(0,nbPlayers).each!(playerID => _score[playerID] = 0);
         placeInitialCharacters(nbPlayers);
+
+        uint[uint] count = _board.cellCountPerColor;
+        foreach(playerID, ref score; _score)
+        {
+            uint color = playerID + 1;
+            _cellCount[playerID] = count[color];
+        }
     }
 
     // Generate the initial characters. Throw Exception on error
@@ -432,6 +493,7 @@ class Game
         v.object["characters"] = describeCharacters;
         v.object["bombs"] = describeBombs;
         v.object["score"] = describeScore;
+        v.object["cell_count"] = describeCellCount;
 
         return v;
     }
@@ -463,6 +525,10 @@ class Game
             "score":{
               "0": 0,
               "1": 0
+            },
+            "cell_count":{
+              "0": 1,
+              "1": 1
             }
           }`.parseJSON.toString);
     }
