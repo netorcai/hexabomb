@@ -8,6 +8,7 @@
     "license": "GPLv3",
     "targetType": "executable",
     "dependencies": {
-        "netorcai-client": "~>0.0.1"
+        "netorcai-client": "~>0.0.1",
+        "docopt": "~>0.6.1-b.6"
     }
 }

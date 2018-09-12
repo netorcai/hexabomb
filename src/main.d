@@ -1,61 +1,87 @@
+import std.conv;
 import std.json;
 import std.format;
 import std.stdio;
 
+import docopt;
+
 import game;
 import netorcai;
 
-void main()
+/// Parse main arguments. The game loop is in the doGame function.
+int main(string[] args)
 {
-    auto game = new Game(`{
-      "cells":[
-        {"q":-3,"r":0,"wall":false},
-        {"q":-3,"r":1,"wall":false},
-        {"q":-3,"r":2,"wall":false},
-        {"q":-3,"r":3,"wall":false},
-        {"q":-2,"r":-1,"wall":false},
-        {"q":-2,"r":0,"wall":false},
-        {"q":-2,"r":1,"wall":false},
-        {"q":-2,"r":2,"wall":false},
-        {"q":-2,"r":3,"wall":false},
-        {"q":-1,"r":-2,"wall":false},
-        {"q":-1,"r":-1,"wall":false},
-        {"q":-1,"r":0,"wall":false},
-        {"q":-1,"r":1,"wall":false},
-        {"q":-1,"r":2,"wall":false},
-        {"q":-1,"r":3,"wall":false},
-        {"q":0,"r":-3,"wall":false},
-        {"q":0,"r":-2,"wall":false},
-        {"q":0,"r":-1,"wall":false},
-        {"q":0,"r":0,"wall":false},
-        {"q":0,"r":1,"wall":false},
-        {"q":0,"r":2,"wall":false},
-        {"q":0,"r":3,"wall":false},
-        {"q":1,"r":-3,"wall":false},
-        {"q":1,"r":-2,"wall":false},
-        {"q":1,"r":-1,"wall":false},
-        {"q":1,"r":0,"wall":false},
-        {"q":1,"r":1,"wall":false},
-        {"q":1,"r":2,"wall":false},
-        {"q":2,"r":-3,"wall":false},
-        {"q":2,"r":-2,"wall":false},
-        {"q":2,"r":-1,"wall":false},
-        {"q":2,"r":0,"wall":false},
-        {"q":2,"r":1,"wall":false},
-        {"q":3,"r":-3,"wall":false},
-        {"q":3,"r":-2,"wall":false},
-        {"q":3,"r":-1,"wall":false},
-        {"q":3,"r":0,"wall":false}],
-      "initial_positions":{
-        "0": [{"q":0, "r":0}],
-        "1": [{"q":0, "r":1}]
-      }
-    }`.parseJSON);
+    auto doc = `hexabomb — D game server
+
+Usage:
+  hexabomb <map> [options]
+  hexabomb --help
+
+Options:
+  --help                        show this help
+  -h <host>, --hostname <host>  set netorcai's hostname [default: 127.0.0.1]
+  -p <port>, --port <port>      set netorcai's port [default: 4242]`;
+
+    // Read arguments
+    auto arguments = docopt.docopt(doc, args[1..$], true);
+    string map = arguments["<map>"].toString;
+    string hostname = arguments["--hostname"].toString;
+    ushort port;
+
+    try
+    {
+        port = to!ushort(arguments["--port"].toString);
+    }
+    catch (Exception e)
+    {
+        writeln("Invalid port: ", e.msg);
+        return 1;
+    }
+
+    // Launch the game
+    try
+    {
+        doGame(map, hostname, port);
+        return 0;
+    }
+    catch (Exception e)
+    {
+        writeln(e.msg);
+        return 1;
+    }
+}
+
+/// Create a Game from a file map. Throw Exception on error
+Game gameFromFile(in string mapFilename)
+{
+    import std.file;
+
+    enforce(mapFilename.exists, format!"File %s does not exist"(mapFilename));
+    enforce(mapFilename.isFile, format!"%s is not a file"(mapFilename));
+    string fileContent = mapFilename.readText;
+    JSONValue fileContentJSON;
+    try
+    {
+        fileContentJSON = fileContent.parseJSON;
+    }
+    catch (Exception e)
+    {
+        throw new Exception(format!"Invalid JSON: %s"(e.msg));
+    }
+
+    return new Game(fileContentJSON);
+}
+
+/// "Main" game function
+void doGame(in string mapFilename, in string hostname, in ushort port)
+{
+    write(format!"Loading map %s... "(mapFilename)); stdout.flush();
+    auto game = gameFromFile(mapFilename);
+    writeln("done");
 
 	auto c = new Client;
-    scope(exit) c.destroy();
     write("Connecting to netorcai... "); stdout.flush();
-    c.connect();
+    c.connect(hostname, port);
     writeln("done");
 
     write("Logging in as a game logic... "); stdout.flush();
