@@ -1,55 +1,91 @@
 settings.outformat = "pdf";
 unitsize(1cm);
 
-real point_size = 0.03;
+// This is the base polygon. The rotation makes it pointy hat.
+path base_hexagon = rotate(30) * polygon(6);
 
-// Polygons
-string[] coord={"(+1,0)", "(+1,-1)", "(0,-1)", "(-1,0)", "(-1,+1)", "(0,+1)"};
-path p0 = rotate(30) * polygon(6);
+// Compute base_length: the length of one hexagon side
+pair a = point(base_hexagon, 0);
+pair b = point(base_hexagon, 1);
+real base_length = sqrt((a.x-b.x)^2 + (a.y-b.y)^2);
 
-pair a = point(p0, 0);
-pair b = point(p0, 1);
-pair mab = (a+b)/2;
-
-real l = length(mab - (0,0));
-real arrow_width = 1.5;
-real arrow_dist = 4;
-
-// Drawing axes
-pair xp = rotate(60*0) * shift(arrow_dist*l) * (0,0);
-pair yp = rotate(60*1) * shift(arrow_dist*l) * (0,0);
-pair zp = rotate(60*2) * shift(arrow_dist*l) * (0,0);
-pair xn = rotate(60*3) * shift(arrow_dist*l) * (0,0);
-pair yn = rotate(60*4) * shift(arrow_dist*l) * (0,0);
-pair zn = rotate(60*5) * shift(arrow_dist*l) * (0,0);
-
-// Colors (iwanthue)
-pen color1 = rgb("000000");
-pen color2 = rgb("000000");
-pen color3 = rgb("000000");
-
-draw(xn..xp, color1 + arrow_width, Arrow(10));
-draw(yn..yp, color2 + arrow_width, Arrow(10));
-draw(zn..zp, color3 + arrow_width, Arrow(10));
-
-label("$x^{+}$", rotate(60*0) * shift((arrow_dist+0.4)*l) * (0,0), color1);
-label("$y^{+}$", rotate(60*1) * shift((arrow_dist+0.4)*l) * (0,0), color2);
-label("$z^{+}$", rotate(60*2) * shift((arrow_dist+0.4)*l) * (0,0), color3);
-label("$x^{-}$", rotate(60*3) * shift((arrow_dist+0.4)*l) * (0,0), color1);
-label("$y^{-}$", rotate(60*4) * shift((arrow_dist+0.4)*l) * (0,0), color2);
-label("$z^{-}$", rotate(60*5) * shift((arrow_dist+0.4)*l) * (0,0), color3);
-
-// Drawing polygons
-real polygon_alpha = 0.97;
-fill(p0, white + opacity(polygon_alpha));
-label("(0,0)", (0,0));
-
-for (int i = 0; i < 6; ++i)
+struct Hexagon
 {
-    path p = rotate(60*i) * shift(2*l) * p0;
-    fill(p, white + opacity(polygon_alpha));
-    draw(p);
+    // Axial coordinates
+    int q;
+    int r;
 
-    pair c = rotate(60*i) * shift(2*l) * (0,0);
-    label(coord[i], c);
+    // Misc attributes
+    pen fill_color;
+    pen border_color;
+
+    pair cartesian_coordinates()
+    {
+        // from https://www.redblobgames.com/grids/hexagons/#hex-to-pixel
+        real x = base_length * (sqrt(3.0) * q + sqrt(3.0) / 2.0 * r);
+        real y = base_length * (                    -3.0  / 2.0 * r);
+        return (x,y);
+    }
+
+    void draw(bool draw_coordinates = false)
+    {
+        // The polygon itself
+        pair pos = cartesian_coordinates();
+        fill(shift(pos) * base_hexagon, fill_color);
+        draw(shift(pos) * base_hexagon, border_color);
+
+        if (draw_coordinates)
+        {
+            string text = "(" + string(q) + "," + string(r) + ")";
+            label(text, pos);
+        }
+    }
+};
+
+Hexagon Hex(int q, int r, pen fill_color=white, pen border_color=black)
+{
+    Hexagon hex = new Hexagon;
+    hex.q = q;
+    hex.r = r;
+    hex.fill_color = fill_color;
+    hex.border_color = border_color;
+    return hex;
+}
+
+void draw_axes(real arrow_width=1.5, real arrow_length=3.5, real label_offset=0.3,
+    pen x_color=black, pen y_color=black, pen z_color=black,
+    bool draw_labels_plus=true,
+    bool draw_labels_minus=true)
+{
+    real length = arrow_length * base_length;
+    real label_length = (arrow_length + label_offset) * base_length;
+    
+    // Points fpr arrows
+    pair xp = rotate(60*0) * shift(length) * (0,0);
+    pair yp = rotate(60*1) * shift(length) * (0,0);
+    pair zp = rotate(60*2) * shift(length) * (0,0);
+    pair xn = rotate(60*3) * shift(length) * (0,0);
+    pair yn = rotate(60*4) * shift(length) * (0,0);
+    pair zn = rotate(60*5) * shift(length) * (0,0);
+
+    // Arrows
+    draw(xn..xp, x_color + arrow_width, Arrow(10));
+    draw(yn..yp, y_color + arrow_width, Arrow(10));
+    draw(zn..zp, z_color + arrow_width, Arrow(10));
+
+    // Labels
+    if (draw_labels_plus)
+    {
+        label("$x^{+}$", rotate(60*0) * shift(label_length) * (0,0), x_color);
+        label("$y^{+}$", rotate(60*1) * shift(label_length) * (0,0), y_color);
+        label("$z^{+}$", rotate(60*2) * shift(label_length) * (0,0), z_color);
+    }
+
+    if (draw_labels_minus)
+    {
+        label("$x^{-}$", rotate(60*3) * shift(label_length) * (0,0), x_color);
+        label("$y^{-}$", rotate(60*4) * shift(label_length) * (0,0), y_color);
+        label("$z^{-}$", rotate(60*5) * shift(label_length) * (0,0), z_color);
+    }
+
 }

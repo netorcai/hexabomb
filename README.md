@@ -43,4 +43,4 @@ where (dq,dr) depends on the direction from (q,r) to (a,b):
 | y-        | towards bottom and left  | (-1,+1) |
 | z-        | towards bottom and right | (0,+1)  |
 
-[axial coordinate system]: doc/img/hexagon.png "Axial coordinate system"
+[axial coordinate system]: doc/img/offsets.png "Axial coordinate system"

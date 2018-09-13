@@ -1,12 +1,10 @@
-PDF= hexagon.pdf
+ASY= offsets.pdf
+PDF= $(ASY:.asy=.pdf)
 PNG= $(PDF:.pdf=.png)
 
 all: ${PDF} ${PNG}
 
-# Disable parallel build
-.NOTPARALLEL:
-
-hexagon.pdf: hexagon.asy
+%.pdf: %.asy
 	asy $<
 
 %.png: %.pdf
