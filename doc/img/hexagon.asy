@@ -59,7 +59,7 @@ void draw_axes(real arrow_width=1.5, real arrow_length=3.5, real label_offset=0.
 {
     real length = arrow_length * base_length;
     real label_length = (arrow_length + label_offset) * base_length;
-    
+
     // Points fpr arrows
     pair xp = rotate(60*0) * shift(length) * (0,0);
     pair yp = rotate(60*1) * shift(length) * (0,0);
