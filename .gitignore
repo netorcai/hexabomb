@@ -20,7 +20,6 @@ hexabomb-test-application
 .dub
 docs.json
 __dummy.html
-docs/
 dub.selections.json
 
 # Code coverage
