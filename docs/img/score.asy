@@ -10,8 +10,7 @@ pair cellCountOrigin = (2.75,0.75);
 pair scoreOrigin = (2.75,-0.5);
 pair playerOffset = (0, 0.5);
 
-pen font_nobold=Helvetica(series="m",shape="n");
-pen font=Helvetica(series="sb",shape="n");
+pen font = fontsize(10pt) + Helvetica(series="sb",shape="n");
 int turn = 0;
 
 // Array of cells to plot
@@ -25,8 +24,8 @@ Hexagon[] hexes = {
 
 // Array of players
 Player[] players = {
-    Player.Player(Hex( 1, 0), graphic("char_blue.eps", "width=1.2cm")),
-    Player.Player(Hex(-1, 0), graphic("char_green.eps", "width=1cm"))
+    Player.Player(0, "Blue", Hex( 1, 0), graphic("char_blue.eps", "width=1.2cm")),
+    Player.Player(1, "Green", Hex(-1, 0), graphic("char_green.eps", "width=1cm"))
 };
 
 // Invisible node to make sure all subfigs have the same size
@@ -49,19 +48,19 @@ void render(string filename)
     }
 
     // Draw the turn
-    label("turn " + string(turn), turnOrigin, right, font_nobold);
+    label("turn " + string(turn), turnOrigin, right, font);
 
     int playerID = 0;
     while(playerID < 2)
     {
-        pen textPen = font+ 0.95*palette3[playerID];
+        pen textPen = font;
 
         // Draw the cell count
-        string text = "count: " + string(cellCount[playerID]);
+        string text = players[playerID].name + " \#cells: " + string(cellCount[playerID]);
         label(text, shift(playerOffset * playerID) * cellCountOrigin, right, textPen);
 
         // Draw the score
-        text = "score: " + string(score[playerID]);
+        text = players[playerID].name + " score: " + string(score[playerID]);
         label(text, shift(playerOffset * playerID) * scoreOrigin, right, textPen);
 
         playerID = playerID + 1;
