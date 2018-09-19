@@ -1,14 +1,15 @@
-ASY= offsets.pdf score_turn0.pdf score_turn1.pdf score_turn2.pdf score_turn3.pdf
-PDF= $(ASY:.asy=.pdf)
-SVG= $(PDF:.pdf=.svg)
-PNG= $(PDF:.pdf=.png)
+ASY=offsets.pdf score_turn0.pdf score_turn1.pdf score_turn2.pdf score_turn3.pdf
+PDF=$(ASY:.asy=.pdf)
+SVG=$(PDF:.pdf=.svg)
+PNG=$(PDF:.pdf=.png)
+EPS=char_blue.eps char_green.eps
 
 # Disable parallel build
 .NOTPARALLEL:
 
-all: ${PDF} ${PNG} ${SVG}
+all: ${PDF} ${PNG} ${SVG} ${EPS}
 
-score_turn%.pdf: score.asy
+score_turn%.pdf: score.asy char_blue.eps char_green.eps
 	asy $<
 
 %.pdf: %.asy
@@ -20,8 +21,11 @@ score_turn%.pdf: score.asy
 %.png: %.pdf
 	convert -density 150 $< -quality 100 -background white -alpha remove $@
 
+%.eps: %.svg
+	inkscape -E $@ -f $<
+
 mrproper:
-	rm -f ${PDF} ${PNG}
+	rm -f ${PDF} ${PNG} ${SVG} ${EPS}
 
 update-view:
 	@killall -SIGHUP llpp &> /dev/null || true # update pdf viewer
