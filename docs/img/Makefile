@@ -19,7 +19,7 @@ score_turn%.pdf: score.asy char_blue.eps char_green.eps
 	inkscape -l $@ -f $<
 
 %.png: %.pdf
-	convert -density 150 $< -quality 100 -background white -alpha remove $@
+	convert -density 150 $< -quality 100 $@
 
 %.eps: %.svg
 	inkscape -E $@ -f $<
