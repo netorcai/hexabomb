@@ -1,15 +1,15 @@
 Game description
 ================
 
-Introduction. TODO
+hexabomb is a network multi-agent (multi-player) game, intended to be played by bots.
+The game is strongly inspired by Bomberman and Splatoon, with hexagons.
 
-Objective
----------
-TODO
+Each agent controls characters that move on a board.
+A color is associated to each agent.
+The goal of each agent is to have the largest numbers of cell of its color in the board.
 
-Actions
--------
-TODO
+For this purpose, the characters color the cells they go through.
+Additionally, the characters may drop bombs that color surrounding cells when they explode.
 
 Board
 -----
@@ -20,8 +20,8 @@ TODO: insert an example game board.
 
 A cell can have up to 6 neighbors (three axes, two directions per axis).
 Each cell is identified by its axial coordinates :math:`(q,r)`.
-This coordinate system makes sure that different cells have different coordinates.
-Furthermore, going into a direction always results in the same coordinate transformations.
+This coordinate system makes sure that different cells have different coordinates,
+and that going into a given direction always results in the same coordinate transformations.
 
 .. list-table:: Coordinates transformations from cell :math:`(q,r)` to its neighboring cells.
     :header-rows: 1
@@ -57,12 +57,20 @@ Cell
 ----
 TODO
 
-Score
------
-At the end of each turn, the score of each player is increased by the number of
+Actions
+-------
+TODO
+
+Objective and score
+-------------------
+At the end of the game, the agent with the highest score wins the game.
+
+The score of each agent is the cumulated number of cells it controlled throughout the turns.
+In other words, at the end of each turn, the score of each player is increased by the number of
 cells of the player's color.
+
 As an example, consider the following 5-cell board on which 2 players (Blue and Green) play.
-At the beginning, Blue and Green control the same number of cells and have the same score.
+At the beginning, Blue and Green control the same number of cells (1) and have the same score (1).
 
 .. image:: img/score_turn0.png
    :scale: 100 %
