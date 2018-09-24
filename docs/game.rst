@@ -16,7 +16,9 @@ Board
 
 The game board is an hexagonal grid composed of cells.
 
-TODO: insert an example game board.
+.. image:: img/board_example.png
+   :scale: 100 %
+   :alt: Board example
 
 A cell can have up to 6 neighbors (three axes, two directions per axis).
 Each cell is identified by its axial coordinates :math:`(q,r)`.

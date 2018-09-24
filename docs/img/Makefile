@@ -1,8 +1,7 @@
-ASY=offsets.pdf score_turn0.pdf score_turn1.pdf score_turn2.pdf score_turn3.pdf
-PDF=$(ASY:.asy=.pdf)
+PDF=offsets.pdf score_turn0.pdf score_turn1.pdf score_turn2.pdf score_turn3.pdf board_example.pdf
 SVG=$(PDF:.pdf=.svg)
 PNG=$(PDF:.pdf=.png)
-EPS=char_blue.eps char_green.eps
+EPS=char_blue.eps char_green.eps char.eps
 
 # Disable parallel build
 .NOTPARALLEL:
