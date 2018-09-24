@@ -47,13 +47,15 @@ for (Bomb b : bombs)
 }
 
 // Labels
-pen font = font("OT1", "cmr", "b", "n");
-label("Traversable cells", (-2,1.5), right, font);
-label("Empty (neutral color)", (2,0), right);
-label("Empty (players' color)", (2,-1.5), right);
+pen boldFont = fontsize(10) + font("OT1", "cmr", "b", "n");
+pen font = fontsize(10) + font("OT1", "cmr", "m", "n");
 
-label("Non-traversable cells", (-2,-3), right, font);
-label("Characters", (2,-4.5), right);
-label("Wall", (2,-6), right);
-label("Thin bomb", (2,-7.5), right);
-label("Fat bomb", (2,-9), right);
+label("Traversable cells", (-2,1.5), right, boldFont);
+label("Empty (neutral color)", (2,0), right, font);
+label("Empty (players' color)", (2,-1.5), right, font);
+
+label("Non-traversable cells", (-2,-3), right, boldFont);
+label("Characters", (2,-4.5), right, font);
+label("Wall", (2,-6), right, font);
+label("Thin bomb", (2,-7.5), right, font);
+label("Fat bomb", (2,-9), right, font);
