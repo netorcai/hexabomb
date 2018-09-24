@@ -55,9 +55,24 @@ and that going into a given direction always results in the same coordinate tran
    :scale: 100 %
    :alt: coordinates transformations
 
-Cell
-----
-TODO
+Cells
+-----
+Two types of cells exist on the board: **usual cells** and **walls**.
+
+Usual cells can host characters and bombs, and have a color (that can be neutral).
+Players can move into usual cells if they are empty — i.e., if they do not host characters nor bombs.
+Usual cells can be colored by a bomb if they are in the bomb's explosion range.
+
+Contrary to usual cells, walls are obstacles without color.
+Characters cannot move into walls.
+Bombs cannot traverse walls.
+Thin bomb explosions are completely stopped by walls,
+while fat bomb explosions can circumvent them.
+
+
+.. image:: img/cell_types.png
+   :scale: 100 %
+   :alt: figuration of cell types
 
 Actions
 -------

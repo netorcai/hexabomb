@@ -35,7 +35,7 @@ Player[] players = {
 
 // Array of bombs
 Bomb[] bombs = {
-    Bomb.Bomb(Hex(-2, 1), graphic("bomb.eps", "width=8mm"), 3)
+    Bomb.Bomb(Hex(-2, 1), graphic("thin_bomb.eps", "width=8mm"), 3)
 };
 
 // Draw the hexagons
