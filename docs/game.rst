@@ -50,7 +50,6 @@ and that going into a given direction always results in the same coordinate tran
       - towards bottom and right
       - :math:`(q,r+1)`
 
-
 .. image:: img/offsets.png
    :scale: 100 %
    :alt: coordinates transformations
@@ -69,10 +68,15 @@ Bombs cannot traverse walls.
 Thin bomb explosions are completely stopped by walls,
 while fat bomb explosions can circumvent them.
 
-
 .. image:: img/cell_types.png
    :scale: 100 %
    :alt: figuration of cell types
+
+Bombs
+-----
+.. image:: img/explosion_thin.gif
+   :scale: 100 %
+   :alt: figuration of a thin bomb lifecycle
 
 Actions
 -------
