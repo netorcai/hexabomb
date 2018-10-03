@@ -77,7 +77,7 @@ Bombs
 Bombs can be dropped by characters on their current cell.
 Bombs explode after a given **delay** and have a **range**.
 Upon explosion, bombs color the cells of their explosion area with the color
-of the player that dropped the bomb — killing any character present in the explosion area in the process.
+of the player that dropped the bomb — killing any character and exploding any bomb present in the explosion area.
 
 The explosion area of a bomb can be determined from its range and its **type**,
 which is either *thin* or *fat*.
@@ -120,6 +120,33 @@ The animation below shows a simple game scenario involving a fat bomb.
 .. image:: img/explosion_fat.gif
    :scale: 100 %
    :alt: figuration of a fat bomb lifecycle
+
+Simultaneous explosions
+~~~~~~~~~~~~~~~~~~~~~~~
+Several bombs can explode at the same time.
+This may happen when the delay of several bombs reaches 0 at the same time or in case of `Chain reaction`_.
+
+Simultaneous explosions can lead to conflicts about the coloration of the cells — as some cells can be in the explosion area of several bombs of different colors.
+This is how the color of an exploded cell is determined by hexabomb in case of simulateneous explosions.
+
+1. If the cell is strictly closer to one bomb than the others, the cell is colored by the color of the closest bomb.
+2. If all the bombs of the set of the closest bombs to that cell have the same color, the cell is colored by the color of the bombs.
+3. Otherwise (e.g., if any two bombs of the set of the closest bombs to that cell have different colors), the cell color is turned to neutral.
+
+TODO: figure about simultaneous explosions.
+
+Chain reaction
+~~~~~~~~~~~~~~
+Without any external influence, a bomb explodes when its delay reaches 0.
+A bomb can however explode before reaching a delay of 0 because of another bomb.
+This happens when a bomb is in the explosion area of another bomb (and when
+the other bomb explodes first). This can lead to a chain reaction where many
+bombs can explode at the same time.
+
+If a chain reaction involves bombs of different colors,
+see `Simultaneous explosions`_ to understand how the cells of the explosion areas are colored.
+
+TODO: figure about chain reaction.
 
 Actions
 -------
