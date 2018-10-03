@@ -74,9 +74,52 @@ while fat bomb explosions can circumvent them.
 
 Bombs
 -----
+Bombs can be dropped by characters on their current cell.
+Bombs explode after a given **delay** and have a **range**.
+Upon explosion, bombs color the cells of their explosion area with the color
+of the player that dropped the bomb — killing any character present in the explosion area in the process.
+
+The explosion area of a bomb can be determined from its range and its **type**,
+which is either *thin* or *fat*.
+
+Thin bombs
+~~~~~~~~~~
+Thin bombs explode in straight lines in all 6 directions and cover up to *range*
+cells in each direction. A line is stopped if it encounters a wall — or after *range* cells have been covered.
+
+The animation below shows a simple game scenario involving a thin bomb.
+
+1. On first turn, Green drops a thin bomb (delay=3, range=2) and moves away from it.
+2. On second turn, Green moves away from the bomb explosion area.
+3. On third turn, nothing happens.
+4. During fourth turn, the bomb explodes as its delay reaches 0.
+   The explosion area is highlighted in orange.
+   At the end of the fourth turn, all the cells of the explosion range have been colored in green.
+   Blue is killed in the process as it was in the explosion area.
+
 .. image:: img/explosion_thin.gif
    :scale: 100 %
    :alt: figuration of a thin bomb lifecycle
+
+Fat bombs
+~~~~~~~~~
+Fat bombs explode all the cells that can be reached by traversing *range* cells or less — walls cannot be traversed.
+This means that fat bombs can circumvent walls.
+The explosion range can be computed with a `breadth-first search`_ algorithm with depth limited to *range*.
+
+The animation below shows a simple game scenario involving a fat bomb.
+
+1. On first turn, Green drops a fat bomb (delay=3, range=2) and moves away from it.
+2. On second turn, Green moves away from the bomb but remains in its explosion area.
+3. On third turn, nothing happens.
+4. During fourth turn, the bomb explodes as its delay reaches 0.
+   The explosion area is highlighted in orange.
+   At the end of the fourth turn, all the cells of the explosion range have been colored in green.
+   Both Blue and Green are killed in the process as they were in the explosion area.
+
+.. image:: img/explosion_fat.gif
+   :scale: 100 %
+   :alt: figuration of a fat bomb lifecycle
 
 Actions
 -------
@@ -118,3 +161,5 @@ As a result, Blue's score increases way more than Green's.
 Turn
 ----
 TODO
+
+.. _breadth-first search: https://en.wikipedia.org/wiki/Breadth-first_search
