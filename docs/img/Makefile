@@ -2,7 +2,7 @@ PDF=offsets.pdf score_turn0.pdf score_turn1.pdf score_turn2.pdf score_turn3.pdf 
 SVG=$(PDF:.pdf=.svg)
 PNG=$(PDF:.pdf=.png)
 EPS=char_blue.eps char_green.eps char.eps thin_bomb.eps fat_bomb.eps
-GIF=explosion_thin.gif explosion_fat.gif
+GIF=explosion_thin.gif explosion_fat.gif explosion_simultaneous.gif
 
 # Disable parallel build
 .NOTPARALLEL:
@@ -22,6 +22,12 @@ explosion_fat_turn%.pdf: explosion_fat.asy char.eps fat_bomb.eps
 	asy $<
 
 explosion_fat.gif: explosion_fat_turn0.png explosion_fat_turn1.png explosion_fat_turn2.png explosion_fat_turn3.png  explosion_fat_turn4_before.png explosion_fat_turn4.png
+	convert -delay 100 -loop 0 $^ $@
+
+explosion_simultaneous_turn%.pdf: explosion_simultaneous.asy thin_bomb.eps fat_bomb.eps
+	asy $<
+
+explosion_simultaneous.gif: explosion_simultaneous_turn0.png explosion_simultaneous_turn1.png explosion_simultaneous_turn2.png explosion_simultaneous_turn3.png
 	convert -delay 100 -loop 0 $^ $@
 
 %.pdf: %.asy

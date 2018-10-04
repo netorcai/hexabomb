@@ -27,7 +27,7 @@ struct Hexagon
         return (x,y);
     }
 
-    void draw(bool draw_coordinates = false)
+    void draw(bool draw_coordinates = false, pen label_pen = defaultpen())
     {
         // The polygon itself
         pair pos = cartesian_coordinates();
@@ -37,10 +37,15 @@ struct Hexagon
         if (draw_coordinates)
         {
             string text = "(" + string(q) + "," + string(r) + ")";
-            label(text, pos);
+            label(text, pos, label_pen);
         }
     }
 };
+
+bool coordinates_equals(Hexagon h1, Hexagon h2)
+{
+    return (h1.q == h2.q) && (h1.r == h2.r);
+}
 
 Hexagon Hex(int q, int r, pen fill_color=white, pen border_color=black)
 {

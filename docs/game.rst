@@ -133,7 +133,23 @@ This is how the color of an exploded cell is determined by hexabomb in case of s
 2. If all the bombs of the set of the closest bombs to that cell have the same color, the cell is colored by the color of the bombs.
 3. Otherwise (e.g., if any two bombs of the set of the closest bombs to that cell have different colors), the cell color is turned to neutral.
 
-TODO: figure about simultaneous explosions.
+Simultaneous explosions are figured just below. Here is the board before the explosions.
+
+.. image:: img/explosion_simultaneous_turn1.png
+   :scale: 100 %
+   :alt: figuration of simultaneous explosions (initial board)
+
+Most of the exploded cells are closer to one bomb from the others and take the bomb's color.
+The exploded cells that are at the same distance to multiple bombs are thickly bordered orange.
+
+- Cell at :math:`(1,-3)` becomes green because the two closest bombs exploding it are green — bombs at :math:`(0,-3)` and :math:`(2,-3)`.
+- Cell at :math:`(2,-1)` stays neutral because the two closest bombs exploding it are of different colors — bombs at :math:`(0,0)` and :math:`(2,-3)`.
+- Cell at :math:`(-1,2)` stays neutral because the two closest bombs exploding it are of different colors — at :math:`(0,0)` and :math:`(-3,3)`.
+- Cell at :math:`(-2,1)` becomes neutral because the two closest bombs exploding it are of different colors — at :math:`(0,0)` and :math:`(-3,3)`.
+
+.. image:: img/explosion_simultaneous_turn2.png
+   :scale: 100 %
+   :alt: figuration of simultaneous explosions (after explosions)
 
 Chain reaction
 ~~~~~~~~~~~~~~
