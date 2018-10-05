@@ -94,7 +94,7 @@ void render(string filename)
     // Draw the hexagons
     for (Hexagon hex : hexes)
     {
-        hex.draw(draw_coordinates=should_display_coordinates(hex));
+        hex.draw(draw_coordinates=false);
     }
 
     // Draw the bombs
