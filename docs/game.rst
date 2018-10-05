@@ -164,7 +164,9 @@ bombs can explode at the same time.
 If a chain reaction involves bombs of different colors,
 see `Simultaneous explosions`_ to understand how the cells of the explosion areas are colored.
 
-TODO: figure about chain reaction.
+.. image:: img/explosion_chain_reaction.gif
+   :scale: 100 %
+   :alt: figuration of explosions in chain reaction
 
 Actions
 -------
