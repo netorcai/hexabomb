@@ -7,7 +7,7 @@ from palette access palette3;
 int turn = 0;
 bool draw_player1 = true;
 bool draw_bomb = true;
-bool highlight_cells = false;
+bool highlight_cells = true;
 
 // Array of cells to plot
 Hexagon[] hexes = {
