@@ -1,5 +1,6 @@
 [![Build Status](https://img.shields.io/travis/netorcai/hexabomb/master.svg?maxAge=600)](https://travis-ci.org/netorcai/hexabomb)
 [![Coverage Status](https://img.shields.io/coveralls/netorcai/hexabomb/master.svg?maxAge=600)](https://coveralls.io/github/netorcai/hexabomb?branch=master)
+[![Docs Status](https://img.shields.io/readthedocs/hexabomb.svg?maxAge=600)](https://hexabomb.readthedocs.io/)
 
 hexabomb
 ========
