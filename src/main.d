@@ -54,6 +54,7 @@ Options:
 /// Create a Game from a file map. Throw Exception on error
 Game gameFromFile(in string mapFilename)
 {
+    import std.exception : enforce;
     import std.file;
 
     enforce(mapFilename.exists, format!"File %s does not exist"(mapFilename));
