@@ -3,8 +3,8 @@
     "authors": [
         "Millian Poquet"
     ],
-    "description": "Artificial Intelligence Challenge - D Game Server",
-    "copyright": "Copyright © 2017, Millian Poquet",
+    "description": "Network multiplayer game for bots",
+    "copyright": "Copyright © 2018, Millian Poquet",
     "license": "GPLv3",
     "targetType": "executable",
     "dependencies": {
