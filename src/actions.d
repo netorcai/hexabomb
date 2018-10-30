@@ -14,37 +14,7 @@ enum CharacterMovement : string
 {
     revive = "revive",
     move = "move",
-    bomb = "bomb",
-    bombMove = "bombMove",
-    moveBomb = "moveBomb"
-}
-
-bool isBombRelated(in CharacterMovement m) pure @nogc
-{
-    return m == CharacterMovement.bomb ||
-        m == CharacterMovement.bombMove ||
-        m == CharacterMovement.moveBomb;
-}
-unittest
-{
-    assert(!isBombRelated(CharacterMovement.move));
-    assert(isBombRelated(CharacterMovement.bomb));
-    assert(isBombRelated(CharacterMovement.bombMove));
-    assert(isBombRelated(CharacterMovement.moveBomb));
-}
-
-bool isMoveRelated(in CharacterMovement m) pure @nogc
-{
-    return m == CharacterMovement.move ||
-        m == CharacterMovement.bombMove ||
-        m == CharacterMovement.moveBomb;
-}
-unittest
-{
-    assert(isMoveRelated(CharacterMovement.move));
-    assert(!isMoveRelated(CharacterMovement.bomb));
-    assert(isMoveRelated(CharacterMovement.bombMove));
-    assert(isMoveRelated(CharacterMovement.moveBomb));
+    bomb = "bomb"
 }
 
 Direction readDirectionString(in string s) pure
@@ -112,22 +82,22 @@ struct CharacterActions
         characterID = v["id"].getInt;
 
         movement = to!CharacterMovement(v["movement"].str);
-        if (movement.isMoveRelated)
-            direction = readDirectionString(v["direction"].str);
-
-        if (movement.isBombRelated)
+        final switch (movement)
         {
-            bombType = to!BombType(v["bomb_type"].str);
-            bombRange = v["bomb_range"].getInt;
-            bombDelay = v["bomb_delay"].getInt;
+            case CharacterMovement.move:
+                direction = readDirectionString(v["direction"].str);
+                return;
+            case CharacterMovement.bomb:
+                bombType = to!BombType(v["bomb_type"].str);
+                bombRange = v["bomb_range"].getInt;
+                bombDelay = v["bomb_delay"].getInt;
 
-            checkBombProperties(bombType, bombRange, bombDelay);
-        }
-
-        if (movement == CharacterMovement.revive)
-        {
-            revivePosition.q = v["revive_q"].getInt;
-            revivePosition.r = v["revive_r"].getInt;
+                checkBombProperties(bombType, bombRange, bombDelay);
+                return;
+            case CharacterMovement.revive:
+                revivePosition.q = v["revive_q"].getInt;
+                revivePosition.r = v["revive_r"].getInt;
+                return;
         }
     }
     unittest
@@ -244,57 +214,12 @@ struct CharacterActions
         assert(collectExceptionMsg(CharacterActions(s.parseJSON)) ==
             `Cannot read int value from JSONValue "meh"`);
     }
-
-    CharacterActions[] parts() pure const
-    out(r)
-    {
-        assert(r.length == 1 || r.length == 2);
-    }
-    body
-    {
-        final switch(movement)
-        {
-            case CharacterMovement.revive:
-                return [this];
-            case CharacterMovement.move:
-                return [this];
-            case CharacterMovement.bomb:
-                return [this];
-            case CharacterMovement.bombMove:
-                CharacterActions bomb, move;
-                extractBombAndMove(bomb, move);
-                return [bomb, move];
-            case CharacterMovement.moveBomb:
-                CharacterActions bomb, move;
-                extractBombAndMove(bomb, move);
-                return [move, bomb];
-        }
-    }
-
-    void extractBombAndMove(out CharacterActions bomb, out CharacterActions move) pure const
-    in
-    {
-        assert(movement == CharacterMovement.bombMove ||
-            movement == CharacterMovement.moveBomb);
-    }
-    out
-    {
-        assert(bomb.movement == CharacterMovement.bomb);
-        assert(move.movement == CharacterMovement.move);
-    }
-    body
-    {
-        bomb = move = this;
-        bomb.movement = CharacterMovement.bomb;
-        move.movement = CharacterMovement.move;
-    }
 }
 
 struct PlayerActions
 {
     uint color; // The color of the player that caused the actions
-    CharacterActions[] firstActions; /// Single actions or first part of bombMove and moveBomb
-    CharacterActions[] secondActions; /// Second part of bombMove and moveBomb
+    CharacterActions[] actions; /// The characters' actions
 
     this(uint color, in JSONValue actionsArray)
     {
@@ -307,7 +232,6 @@ struct PlayerActions
         enforce(array.type == JSON_TYPE.ARRAY,
             "actions is not an array");
 
-        CharacterActions[] actions;
         foreach(e; array.array)
         {
             try
@@ -322,14 +246,6 @@ struct PlayerActions
                 info("Ignoring a character action: ", e.msg);
             }
         }
-
-        foreach(action; actions)
-        {
-            auto parts = action.parts;
-            firstActions ~= parts[0];
-            if (parts.length > 1)
-                secondActions ~= parts[1];
-        }
     }
     unittest
     {
@@ -341,50 +257,25 @@ struct PlayerActions
 
         s = `[]`;
         assertNotThrown(pa = PlayerActions(1, s.parseJSON));
-        assert(pa.firstActions.length == 0);
-        assert(pa.secondActions.length == 0);
+        assert(pa.actions.length == 0);
 
         s = `[4]`;
         assertNotThrown(pa = PlayerActions(1, s.parseJSON));
-        assert(pa.firstActions.length == 0);
-        assert(pa.secondActions.length == 0);
+        assert(pa.actions.length == 0);
 
         s = `[{"id":0, "movement":"revive", "revive_q":0, "revive_r":0}]`;
         assertNotThrown(pa = PlayerActions(1, s.parseJSON));
-        assert(pa.firstActions.length == 1);
-        assert(pa.secondActions.length == 0);
+        assert(pa.actions.length == 1);
 
         s = `[{"id":0, "movement":"bomb", "bomb_type": "fat",
                "bomb_range":2, "bomb_delay":3, "direction":"x-"},
               {"id":0, "movement":"move", "direction":"z-"}]`;
         assertNotThrown(pa = PlayerActions(1, s.parseJSON));
-        assert(pa.firstActions.length == 1);
-        assert(pa.secondActions.length == 0);
+        assert(pa.actions.length == 1);
 
         s = `[{"id":0, "movement":"move", "direction":"z+"},
               {"id":1, "movement":"move", "direction":"z-"}]`;
         assertNotThrown(pa = PlayerActions(1, s.parseJSON));
-        assert(pa.firstActions.length == 2);
-        assert(pa.secondActions.length == 0);
-
-        s = `[{"id":0, "movement":"move", "direction":"z+"},
-              {"id":1, "movement":"bombMove", "bomb_type": "fat",
-               "bomb_range":2, "bomb_delay":3, "direction":"x-"}]`;
-        assertNotThrown(pa = PlayerActions(1, s.parseJSON));
-        assert(pa.firstActions.length == 2);
-        assert(pa.firstActions[0].movement == CharacterMovement.move);
-        assert(pa.firstActions[1].movement == CharacterMovement.bomb);
-        assert(pa.secondActions.length == 1);
-        assert(pa.secondActions[0].movement == CharacterMovement.move);
-
-        s = `[{"id":1, "movement":"moveBomb", "bomb_type": "fat",
-               "bomb_range":2, "bomb_delay":3, "direction":"x-"},
-              {"id":0, "movement":"move", "direction":"z+"}]`;
-        assertNotThrown(pa = PlayerActions(1, s.parseJSON));
-        assert(pa.firstActions.length == 2);
-        assert(pa.firstActions[0].movement == CharacterMovement.move);
-        assert(pa.firstActions[1].movement == CharacterMovement.move);
-        assert(pa.secondActions.length == 1);
-        assert(pa.secondActions[0].movement == CharacterMovement.bomb);
+        assert(pa.actions.length == 2);
     }
 }
