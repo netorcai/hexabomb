@@ -13,5 +13,6 @@ executable('hexabomb',
     'src/game.d',
     'src/main.d',
     dependencies: [netorcai_dep, docopt_dep],
-    include_directories: [incdir]
+    include_directories: [incdir],
+    install: true, install_dir: 'bin'
 )
