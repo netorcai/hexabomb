@@ -407,7 +407,6 @@ class Game
             cValue.object["delay"] = b.delay;
             cValue.object["q"] = b.position.q;
             cValue.object["r"] = b.position.r;
-            cValue.object["type"] = b.type;
 
             v.array ~= cValue;
         }
@@ -427,15 +426,15 @@ class Game
         }`.parseJSON);
         assert(g.describeBombs == `[]`.parseJSON);
 
-        g._bombs ~= Bomb(Position(0,1), 3, 5, BombType.thin, 7);
+        g._bombs ~= Bomb(Position(0,1), 3, 5, 7);
         assert(g.describeBombs.toString ==
-            `[{"q":0, "r":1, "color":3, "range":5, "type":"thin", "delay":7}]`
+            `[{"q":0, "r":1, "color":3, "range":5, "delay":7}]`
             .parseJSON.toString);
 
-        g._bombs ~= Bomb(Position(0,2), 4, 2, BombType.fat, 2);
+        g._bombs ~= Bomb(Position(0,2), 4, 2, 2);
         assert(g.describeBombs.toString ==
-            `[{"q":0, "r":1, "color":3, "range":5, "type":"thin", "delay":7},
-              {"q":0, "r":2, "color":4, "range":2, "type":"fat", "delay":2}]`
+            `[{"q":0, "r":1, "color":3, "range":5, "delay":7},
+              {"q":0, "r":2, "color":4, "range":2, "delay":2}]`
             .parseJSON.toString);
     }
 
@@ -613,8 +612,8 @@ class Game
         /+doTurnMsg = nm.parseDoTurnMessage(`{
           "message_type": "DO_TURN",
           "player_actions": [
-            {"player_id": 0, "turn_number": 3, "actions":[{"id":0, "movement":"bombMove", "direction":"x-", "bomb_type":"thin", "bomb_range":2, "bomb_delay":3}]},
-            {"player_id": 1, "turn_number": 3, "actions":[{"id":1, "movement":"moveBomb", "direction":"x-", "bomb_type":"thin", "bomb_range":2, "bomb_delay":4}]}
+            {"player_id": 0, "turn_number": 3, "actions":[{"id":0, "movement":"bombMove", "direction":"x-", "bomb_range":2, "bomb_delay":3}]},
+            {"player_id": 1, "turn_number": 3, "actions":[{"id":1, "movement":"moveBomb", "direction":"x-", "bomb_range":2, "bomb_delay":4}]}
           ]
         }`.parseJSON);
         assertNotThrown(g.doTurn(doTurnMsg, currentWinnerPlayerID, gameState));
@@ -851,7 +850,7 @@ class Game
                    (otherwise, would appear with delay=1)
                 +/
                 cell.addBomb;
-                _bombs ~= Bomb(c.pos, c.color, action.bombRange, action.bombType, action.bombDelay + 1);
+                _bombs ~= Bomb(c.pos, c.color, action.bombRange, action.bombDelay + 1);
                 return true;
         }
     }
@@ -863,7 +862,7 @@ class Game
         // Initial game alterations
         g._board.cellAt(Position(3,-3)).addWall;
         g._board.cellAt(Position(1,-3)).addBomb;
-        g._bombs ~= Bomb(Position(1,-3), 0, 10, BombType.fat, 100);
+        g._bombs ~= Bomb(Position(1,-3), 0, 10, 100);
 
         // Invalid character
         a.characterID = 42;
@@ -945,7 +944,6 @@ class Game
         // bomb //
         //////////
         a.movement = CharacterMovement.bomb;
-        a.bombType = BombType.thin;
         a.bombRange = 3;
         a.bombDelay = 1;
         // OK
@@ -1059,7 +1057,7 @@ class Game
         assert(g == previous);
 
         // Insert bomb
-        g._bombs ~= Bomb(bombPosition, bombColor, bombRange, BombType.thin, 2);
+        g._bombs ~= Bomb(bombPosition, bombColor, bombRange, 2);
         g._board.cellAt(bombPosition).addBomb;
         assert(g != previous);
 
@@ -1067,7 +1065,7 @@ class Game
         g.doBombTurn;
         assert(g != previous);
         previous._board.cellAt(bombPosition).addBomb;
-        previous._bombs = [Bomb(bombPosition, bombColor, bombRange, BombType.thin, 1)];
+        previous._bombs = [Bomb(bombPosition, bombColor, bombRange, 1)];
         assert(g == previous);
 
         // Second bomb turn (explode)
@@ -1075,7 +1073,7 @@ class Game
         assert(g != previous);
         previous._bombs = [];
         auto explosion = previous._board.computeExplosionRange(
-            Bomb(Position(0,3), bombColor, bombRange, BombType.thin, 42));
+            Bomb(Position(0,3), bombColor, bombRange, 42));
 
         foreach (pos; explosion.byKey)
             previous._board.cellAt(pos).explode(bombColor);
@@ -1106,11 +1104,11 @@ class Game
 
         Bomb genBomb(Position pos, uint color)
         {
-            return Bomb(pos, color, 10, BombType.thin, 10);
+            return Bomb(pos, color, 10, 10);
         }
         Bomb[] bombs = [
             // Central bomb
-            Bomb(Position(0,0), 50, 10, BombType.thin, 1),
+            Bomb(Position(0,0), 50, 10, 1),
             // Border bombs
             genBomb(Position( 3, 0), 1),
             genBomb(Position( 3,-3), 2),
@@ -1194,8 +1192,8 @@ class Game
 
         // Insert bombs
         Bomb[] bombs = [
-            Bomb(Position(-3, 0), 1, 3, BombType.thin, 1),
-            Bomb(Position(1, 0), 2, 4, BombType.fat, 2),
+            Bomb(Position(-3, 0), 1, 3, 1),
+            Bomb(Position(1, 0), 2, 4, 2),
         ];
 
         // Insert bombs
@@ -1207,7 +1205,7 @@ class Game
         previous._bombs.each!(b => previous._board.cellAt(b.position).addBomb);
         assert(g == previous);
 
-        // First turn. Thin bomb explodes alone (kills first character).
+        // First turn. Bomb explodes alone (kills first character).
         g.doBombTurn;
         assert(g != previous);
 
@@ -1220,7 +1218,7 @@ class Game
         previous._characters[0].alive = false;
         assert(g == previous);
 
-        // Second turn. Fat bomb explodes alone (recovers all cells, kills c2)
+        // Second turn. Bomb explodes alone (recovers all cells, kills c2)
         g.doBombTurn;
         assert(g != previous);
 
@@ -1276,9 +1274,9 @@ class Game
         g.placeInitialCharacters(2);
         assert(g.toString == `{bombs=[], characters=[Character(0, 1, true, {q=0,r=0}), Character(1, 2, true, {q=0,r=1})], initialPositions=[0:[{q=0,r=0}], 1:[{q=0,r=1}]], board={cells:[{q=0,r=0}:{color=1,char}, {q=0,r=1}:{color=2,char}], neighbors:[{q=0,r=0}:[{q=0,r=1}], {q=0,r=1}:[{q=0,r=0}]]}}`);
 
-        g._bombs = [Bomb(Position(0,0), 1, 1, BombType.thin, 1)];
+        g._bombs = [Bomb(Position(0,0), 1, 1, 1)];
         g._board.cellAt(Position(0,0)).addBomb;
-        assert(g.toString == `{bombs=[Bomb({q=0,r=0}, 1, 1, thin, 1)], characters=[Character(0, 1, true, {q=0,r=0}), Character(1, 2, true, {q=0,r=1})], initialPositions=[0:[{q=0,r=0}], 1:[{q=0,r=1}]], board={cells:[{q=0,r=0}:{color=1,char,bomb}, {q=0,r=1}:{color=2,char}], neighbors:[{q=0,r=0}:[{q=0,r=1}], {q=0,r=1}:[{q=0,r=0}]]}}`);
+        assert(g.toString == `{bombs=[Bomb({q=0,r=0}, 1, 1, 1)], characters=[Character(0, 1, true, {q=0,r=0}), Character(1, 2, true, {q=0,r=1})], initialPositions=[0:[{q=0,r=0}], 1:[{q=0,r=1}]], board={cells:[{q=0,r=0}:{color=1,char,bomb}, {q=0,r=1}:{color=2,char}], neighbors:[{q=0,r=0}:[{q=0,r=1}], {q=0,r=1}:[{q=0,r=0}]]}}`);
     }
 }
 

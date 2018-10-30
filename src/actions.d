@@ -42,21 +42,13 @@ unittest
     assertThrown(readDirectionString(`y+ `));
 }
 
-void checkBombProperties(in BombType bombType, in int bombRange, in int bombDelay)
+void checkBombProperties(in int bombRange, in int bombDelay)
 {
     enforce(bombDelay >= 2 && bombDelay <= 4,
         format!"invalid bomb delay %s"(bombDelay));
 
-    final switch (bombType)
-    {
-        case BombType.thin:
-            enforce(bombRange >= 2 && bombRange <= 4,
-                format!"invalid thin bomb range %s"(bombRange));
-            break;
-        case BombType.fat:
-            enforce(bombRange == 2,
-                format!"invalid fat bomb range %s"(bombRange));
-    }
+    enforce(bombRange >= 2 && bombRange <= 4,
+        format!"invalid bomb range %s"(bombRange));
 }
 
 struct CharacterActions
@@ -71,7 +63,6 @@ struct CharacterActions
     Position revivePosition;
 
     // Bomb related
-    BombType bombType;
     uint bombRange;
     uint bombDelay;
 
@@ -88,11 +79,10 @@ struct CharacterActions
                 direction = readDirectionString(v["direction"].str);
                 return;
             case CharacterMovement.bomb:
-                bombType = to!BombType(v["bomb_type"].str);
                 bombRange = v["bomb_range"].getInt;
                 bombDelay = v["bomb_delay"].getInt;
 
-                checkBombProperties(bombType, bombRange, bombDelay);
+                checkBombProperties(bombRange, bombDelay);
                 return;
             case CharacterMovement.revive:
                 revivePosition.q = v["revive_q"].getInt;
@@ -140,63 +130,35 @@ struct CharacterActions
         s = `{"id":0, "movement":"bomb"}`;
         assertThrown(CharacterActions(s.parseJSON));
         assert(collectExceptionMsg(CharacterActions(s.parseJSON)) ==
-            "Key not found: bomb_type");
-
-        s = `{"id":0, "movement":"bomb", "bomb_type": "meh"}`;
-        assertThrown(CharacterActions(s.parseJSON));
-        assert(collectExceptionMsg(CharacterActions(s.parseJSON)) ==
-            "BombType does not have a member named 'meh'");
-
-        s = `{"id":0, "movement":"bomb", "bomb_type": "thin"}`;
-        assertThrown(CharacterActions(s.parseJSON));
-        assert(collectExceptionMsg(CharacterActions(s.parseJSON)) ==
             "Key not found: bomb_range");
 
-        s = `{"id":0, "movement":"bomb", "bomb_type": "thin",
-            "bomb_range":2}`;
+        s = `{"id":0, "movement":"bomb", "bomb_range":2}`;
         assertThrown(CharacterActions(s.parseJSON));
         assert(collectExceptionMsg(CharacterActions(s.parseJSON)) ==
             "Key not found: bomb_delay");
 
-        s = `{"id":0, "movement":"bomb", "bomb_type": "thin",
-            "bomb_range":2, "bomb_delay":3}`;
+        s = `{"id":0, "movement":"bomb", "bomb_range":2, "bomb_delay":3}`;
         assertNotThrown(CharacterActions(s.parseJSON));
 
-        s = `{"id":0, "movement":"bomb", "bomb_type": "thin",
-            "bomb_range":2, "bomb_delay":1}`;
+        s = `{"id":0, "movement":"bomb", "bomb_range":2, "bomb_delay":1}`;
         assertThrown(CharacterActions(s.parseJSON));
         assert(collectExceptionMsg(CharacterActions(s.parseJSON)) ==
             "invalid bomb delay 1");
 
-        s = `{"id":0, "movement":"bomb", "bomb_type": "thin",
-            "bomb_range":2, "bomb_delay":5}`;
+        s = `{"id":0, "movement":"bomb", "bomb_range":2, "bomb_delay":5}`;
         assertThrown(CharacterActions(s.parseJSON));
         assert(collectExceptionMsg(CharacterActions(s.parseJSON)) ==
             "invalid bomb delay 5");
 
-        s = `{"id":0, "movement":"bomb", "bomb_type": "thin",
-            "bomb_range":1, "bomb_delay":3}`;
+        s = `{"id":0, "movement":"bomb", "bomb_range":1, "bomb_delay":3}`;
         assertThrown(CharacterActions(s.parseJSON));
         assert(collectExceptionMsg(CharacterActions(s.parseJSON)) ==
-            "invalid thin bomb range 1");
+            "invalid bomb range 1");
 
-        s = `{"id":0, "movement":"bomb", "bomb_type": "thin",
-            "bomb_range":5, "bomb_delay":3}`;
+        s = `{"id":0, "movement":"bomb", "bomb_range":5, "bomb_delay":3}`;
         assertThrown(CharacterActions(s.parseJSON));
         assert(collectExceptionMsg(CharacterActions(s.parseJSON)) ==
-            "invalid thin bomb range 5");
-
-        s = `{"id":0, "movement":"bomb", "bomb_type": "fat",
-            "bomb_range":1, "bomb_delay":3}`;
-        assertThrown(CharacterActions(s.parseJSON));
-        assert(collectExceptionMsg(CharacterActions(s.parseJSON)) ==
-            "invalid fat bomb range 1");
-
-        s = `{"id":0, "movement":"bomb", "bomb_type": "fat",
-            "bomb_range":3, "bomb_delay":3}`;
-        assertThrown(CharacterActions(s.parseJSON));
-        assert(collectExceptionMsg(CharacterActions(s.parseJSON)) ==
-            "invalid fat bomb range 3");
+            "invalid bomb range 5");
 
         // Revive
         s = `{"id":0, "movement":"revive"}`;
@@ -267,8 +229,7 @@ struct PlayerActions
         assertNotThrown(pa = PlayerActions(1, s.parseJSON));
         assert(pa.actions.length == 1);
 
-        s = `[{"id":0, "movement":"bomb", "bomb_type": "fat",
-               "bomb_range":2, "bomb_delay":3, "direction":"x-"},
+        s = `[{"id":0, "movement":"bomb", "bomb_range":2, "bomb_delay":3},
               {"id":0, "movement":"move", "direction":"z-"}]`;
         assertNotThrown(pa = PlayerActions(1, s.parseJSON));
         assert(pa.actions.length == 1);

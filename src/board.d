@@ -340,64 +340,24 @@ class Board
     }
     out (result)
     {
-        final switch(bomb.type)
-        {
-            case BombType.thin:
-                assert(result.length <= bomb.range * 6 + 1);
-                break;
-            case BombType.fat:
-                int max_cells = 1;
-                foreach (distance; 1..bomb.range+1)
-                    max_cells += distance*6;
-                assert(result.length <= max_cells);
-                break;
-        }
+        assert(result.length <= bomb.range * 6 + 1);
     }
     body
     {
         int[Position] explodingCells = [bomb.position: 0];
 
-        final switch(bomb.type)
+        // Straight lines in all directions
+        foreach (offset; offsets)
         {
-            case BombType.thin:
-                // Straight lines in all directions
-                foreach (offset; offsets)
-                {
-                    Position pos = bomb.position;
-                    foreach(dist ; 1..bomb.range+1)
-                    {
-                        pos = pos + offset;
-                        if (cellExists(pos) && cellAt(pos).isExplodable)
-                            explodingCells[pos] = dist;
-                        else
-                            break;
-                    }
-                }
-                break;
-            case BombType.fat:
-                // All cells around the bomb before a given distance
-                // BFS
-                alias PosDist = Tuple!(Position, "position", int, "distance");
-
-                auto queue = DList!PosDist(PosDist(bomb.position, 0));
-
-                while(!queue.empty)
-                {
-                    PosDist cd = queue.front;
-                    queue.removeFront;
-
-                    foreach (neighbor; _neighbors[cd.position])
-                    {
-                        if (cellExists(neighbor) &&
-                            !(neighbor in explodingCells) &&
-                            cellAt(neighbor).isExplodable &&
-                            cd.distance < bomb.range)
-                        {
-                            queue.insertBack(PosDist(neighbor, cd.distance+1));
-                            explodingCells[neighbor] = cd.distance + 1;
-                        }
-                    }
-                }
+            Position pos = bomb.position;
+            foreach(dist ; 1..bomb.range+1)
+            {
+                pos = pos + offset;
+                if (cellExists(pos) && cellAt(pos).isExplodable)
+                    explodingCells[pos] = dist;
+                else
+                    break;
+            }
         }
         return explodingCells;
     }
@@ -416,16 +376,10 @@ class Board
         bomb.position = Position(0,0);
 
         // Distance 0
-        bomb.type = BombType.thin;
-        bomb.range = 0;
-        assert(b.computeExplosionRange(bomb) == [Position(0,0): 0]);
-
-        bomb.type = BombType.fat;
         bomb.range = 0;
         assert(b.computeExplosionRange(bomb) == [Position(0,0): 0]);
 
         // Distance 1
-        bomb.type = BombType.thin;
         bomb.range = 1;
         wrapperAssertEquals(b.computeExplosionRange(bomb),
                             [Position( 0, 0) : 0,
@@ -435,22 +389,9 @@ class Board
                              Position(-1, 0) : 1,
                              Position(-1, 1) : 1,
                              Position( 0, 1) : 1],
-                            "Long 1");
-
-        bomb.type = BombType.fat;
-        bomb.range = 1;
-        wrapperAssertEquals(b.computeExplosionRange(bomb),
-                            [Position( 0, 0) : 0,
-                             Position( 1, 0) : 1,
-                             Position( 1,-1) : 1,
-                             Position( 0,-1) : 1,
-                             Position(-1, 0) : 1,
-                             Position(-1, 1) : 1,
-                             Position( 0, 1) : 1],
-                            "Compact 1");
+                            "Range 1");
 
         // Distance 2
-        bomb.type = BombType.thin;
         bomb.range = 2;
         wrapperAssertEquals(b.computeExplosionRange(bomb),
                             [Position( 0, 0) : 0,
@@ -460,28 +401,9 @@ class Board
                              Position(-1, 0) : 1, Position(-2, 0) : 2,
                              Position(-1, 1) : 1, Position(-2, 2) : 2,
                              Position( 0, 1) : 1, Position( 0, 2) : 2],
-                            "Long 2");
-
-        bomb.type = BombType.fat;
-        bomb.range = 2;
-        wrapperAssertEquals(b.computeExplosionRange(bomb),
-                            [Position( 0, 0) : 0,
-                             Position( 1, 0) : 1, Position( 2, 0) : 2,
-                             Position( 1,-1) : 1, Position( 2,-2) : 2,
-                             Position( 0,-1) : 1, Position( 0,-2) : 2,
-                             Position(-1, 0) : 1, Position(-2, 0) : 2,
-                             Position(-1, 1) : 1, Position(-2, 2) : 2,
-                             Position( 0, 1) : 1, Position( 0, 2) : 2,
-                             Position( 2,-1) : 2,
-                             Position( 1,-2) : 2,
-                             Position(-1,-1) : 2,
-                             Position(-2, 1) : 2,
-                             Position(-1, 2) : 2,
-                             Position( 1, 1) : 2],
-                            "Compact 2");
+                            "Range 2");
 
         // Distance 3
-        bomb.type = BombType.thin;
         bomb.range = 3;
         wrapperAssertEquals(b.computeExplosionRange(bomb),
                             [Position( 0, 0) : 0,
@@ -491,36 +413,11 @@ class Board
                              Position(-1, 0) : 1, Position(-2, 0) : 2, Position(-3, 0) : 3,
                              Position(-1, 1) : 1, Position(-2, 2) : 2, Position(-3, 3) : 3,
                              Position( 0, 1) : 1, Position( 0, 2) : 2, Position( 0, 3) : 3],
-                            "Long 3");
-
-        bomb.type = BombType.fat;
-        bomb.range = 3;
-        wrapperAssertEquals(b.computeExplosionRange(bomb),
-                            [Position( 0, 0) : 0,
-                             Position( 1, 0) : 1, Position( 2, 0) : 2,
-                             Position( 1,-1) : 1, Position( 2,-2) : 2,
-                             Position( 0,-1) : 1, Position( 0,-2) : 2,
-                             Position(-1, 0) : 1, Position(-2, 0) : 2,
-                             Position(-1, 1) : 1, Position(-2, 2) : 2,
-                             Position( 0, 1) : 1, Position( 0, 2) : 2,
-                             Position( 2,-1) : 2,
-                             Position( 1,-2) : 2,
-                             Position(-1,-1) : 2,
-                             Position(-2, 1) : 2,
-                             Position(-1, 2) : 2,
-                             Position( 1, 1) : 2,
-                             Position( 3, 0) : 3, Position( 3,-1) : 3, Position( 3,-2) : 3,
-                             Position( 3,-3) : 3, Position( 2,-3) : 3, Position( 1,-3) : 3,
-                             Position( 0,-3) : 3, Position(-1,-2) : 3, Position(-2,-1) : 3,
-                             Position(-3, 0) : 3, Position(-3, 1) : 3, Position(-3, 2) : 3,
-                             Position(-3, 3) : 3, Position(-2, 3) : 3, Position(-1, 3) : 3,
-                             Position( 0, 3) : 3, Position( 1, 2) : 3, Position( 2, 1) : 3],
-                            "Compact 3");
+                            "Range 3");
 
         // Distance 3, 1 wall.
         b.cellAt(Position( 1, 0)).addWall;
 
-        bomb.type = BombType.thin;
         bomb.range = 3;
         wrapperAssertEquals(b.computeExplosionRange(bomb),
                             [Position( 0, 0) : 0,
@@ -529,31 +426,7 @@ class Board
                              Position(-1, 0) : 1, Position(-2, 0) : 2, Position(-3, 0) : 3,
                              Position(-1, 1) : 1, Position(-2, 2) : 2, Position(-3, 3) : 3,
                              Position( 0, 1) : 1, Position( 0, 2) : 2, Position( 0, 3) : 3],
-                            "Long 3, 1 wall");
-
-        bomb.type = BombType.fat;
-        bomb.range = 3;
-        wrapperAssertEquals(b.computeExplosionRange(bomb),
-                            [Position( 0, 0) : 0,
-                                                  Position( 2, 0) : 3,
-                             Position( 1,-1) : 1, Position( 2,-2) : 2,
-                             Position( 0,-1) : 1, Position( 0,-2) : 2,
-                             Position(-1, 0) : 1, Position(-2, 0) : 2,
-                             Position(-1, 1) : 1, Position(-2, 2) : 2,
-                             Position( 0, 1) : 1, Position( 0, 2) : 2,
-                             Position( 2,-1) : 2,
-                             Position( 1,-2) : 2,
-                             Position(-1,-1) : 2,
-                             Position(-2, 1) : 2,
-                             Position(-1, 2) : 2,
-                             Position( 1, 1) : 2,
-                                                  Position( 3,-1) : 3, Position( 3,-2) : 3,
-                             Position( 3,-3) : 3, Position( 2,-3) : 3, Position( 1,-3) : 3,
-                             Position( 0,-3) : 3, Position(-1,-2) : 3, Position(-2,-1) : 3,
-                             Position(-3, 0) : 3, Position(-3, 1) : 3, Position(-3, 2) : 3,
-                             Position(-3, 3) : 3, Position(-2, 3) : 3, Position(-1, 3) : 3,
-                             Position( 0, 3) : 3, Position( 1, 2) : 3, Position( 2, 1) : 3],
-                            "Compact 3, 1 wall");
+                            "Range 3, 1 wall");
     }
 
     override bool opEquals(const Object o) @safe @nogc pure const
