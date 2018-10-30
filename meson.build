@@ -1,7 +1,7 @@
 project('hexabomb', 'd', version: '0.2.0-dev')
 
-netorcai_dep = dependency('netorcai-client', method: 'dub')
-docopt_dep = dependency('docopt', method: 'dub')
+netorcai_dep = dependency('netorcai-client-d', method: 'pkg-config')
+docopt_dep = dependency('docopt-d', method: 'pkg-config')
 
 incdir = include_directories('src')
 
