@@ -843,9 +843,15 @@ class Game
                 enforce(!cell.hasBomb,
                     format!"Character id=%s cannot spawn a bomb (cell is already bombed)"(c.id));
 
-                // Everything seems fine. We can spawn the bomb.
+                /+ Everything seems fine. We can spawn the bomb.
+
+                   bombDelay + 1 is used to minimize players' confusion.
+                   This way, a bomb that has just been spawned with delay=2
+                   is seen with a delay=2 the first turn the bomb appears
+                   (otherwise, would appear with delay=1)
+                +/
                 cell.addBomb;
-                _bombs ~= Bomb(c.pos, c.color, action.bombRange, action.bombType, action.bombDelay);
+                _bombs ~= Bomb(c.pos, c.color, action.bombRange, action.bombType, action.bombDelay + 1);
                 return true;
         }
     }
@@ -941,7 +947,7 @@ class Game
         a.movement = CharacterMovement.bomb;
         a.bombType = BombType.thin;
         a.bombRange = 3;
-        a.bombDelay = 2;
+        a.bombDelay = 1;
         // OK
         assert(g.applyAction(a, 1) == true);
         // Onto a bomb
@@ -949,7 +955,9 @@ class Game
         assert(collectExceptionMsg(g.applyAction(a, 1)) ==
             `Character id=0 cannot spawn a bomb (cell is already bombed)`);
         // Kill the characters
+        assert(c.alive == true);
         g.doBombTurn;
+        assert(c.alive == true);
         g.doBombTurn;
         assert(c.alive == false);
         // Dead
