@@ -10,5 +10,15 @@ The game is strongly inspired by Bomberman and Splatoon, with hexagons.
 [hexabomb's documentation][readthedocs] gives the game rules,
 installation/usage instructions and more.
 
+Build it yourself
+-----------------
+Requirements: git, dub and a recent D compiler.
+
+```bash
+git clone https://github.com/netorcai/hexabomb.git
+cd hexabomb
+dub build
+```
+
 [netorcai]: https://github.com/netorcai/netorcai
 [readthedocs]: https://hexabomb.readthedocs.io/
