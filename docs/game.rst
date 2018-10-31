@@ -1,19 +1,17 @@
 Game description
 ================
-
-hexabomb is a network multi-agent (multi-player) game, intended to be played by bots.
+hexabomb is a network multi-player (multi-agent) game, intended to be played by bots.
 The game is strongly inspired by Bomberman and Splatoon, with hexagons.
 
-Each agent controls characters that move on a board.
-A color is associated to each agent.
-The goal of each agent is to have the largest numbers of cell of its color in the board.
+Each player controls characters that move on a board.
+A color is associated to each player.
+The goal of each player is to have the largest numbers of cell of its color in the board.
 
 For this purpose, the characters color the cells they go through.
 Additionally, the characters may drop bombs that color surrounding cells when they explode.
 
 Board
 -----
-
 The game board is an hexagonal grid composed of cells.
 
 .. image:: img/board_example.png
@@ -59,18 +57,71 @@ Cells
 Two types of cells exist on the board: **usual cells** and **walls**.
 
 Usual cells can host characters and bombs, and have a color (that can be neutral).
-Players can move into usual cells if they are empty — i.e., if they do not host characters nor bombs.
+Characters can move into usual cells if they are empty — i.e., if they do not host characters nor bombs.
 Usual cells can be colored by a bomb if they are in the bomb's explosion range.
 
 Contrary to usual cells, walls are obstacles without color.
 Characters cannot move into walls.
 Bombs cannot traverse walls.
-Thin bomb explosions are completely stopped by walls,
-while fat bomb explosions can circumvent them.
+Bomb explosions are completely stopped by walls.
 
 .. image:: img/cell_types.png
    :scale: 100 %
    :alt: figuration of cell types
+
+Turns and actions
+-----------------
+The game is turn based. All players can do actions on each turn.
+All players should follow the following behaviour.
+
+1. Wait for a new turn to start.
+2. Receive a new turn (up-to-date board information) from the network.
+3. Decide what to do.
+4. Send the actions on the network. Start again (goto step 1).
+
+On each turn each character can either move or drop a bomb.
+The exhaustive list of what each character can do is the following.
+
+- Do nothing.
+- **move**: Move one cell towards one of the 6 directions.
+- **bomb**: Drop a bomb in the character current cell.
+
+hexabomb will apply the players' decisions in best effort.
+In case of conflicts, the faster player is priority.
+
+Objective and score
+-------------------
+At the end of the game, the player with the highest score wins the game.
+
+The score of each player is the cumulated number of cells it controlled throughout the turns.
+In other words, at the end of each turn, the score of each player is increased by the number of
+cells of the player's color.
+
+As an example, consider the following 5-cell board on which 2 players (Blue and Green) play.
+At the beginning, Blue and Green control the same number of cells (1) and have the same score (1).
+
+.. image:: img/score_turn0.png
+   :scale: 100 %
+   :alt: score turn 0
+
+On first turn, Blue moves while Green does not.
+This allows Blue to earn 2 points this turn, while Green only earns 1 point.
+
+.. image:: img/score_turn1.png
+   :scale: 100 %
+   :alt: score turn 1
+
+Green remains motionless in the next turns, while Blue controls more and more cells.
+As a result, Blue's score increases way more than Green's.
+
+.. image:: img/score_turn2.png
+   :scale: 100 %
+   :alt: score turn 2
+
+.. image:: img/score_turn3.png
+   :scale: 100 %
+   :alt: score turn 3
+
 
 Bombs
 -----
@@ -79,17 +130,12 @@ Bombs explode after a given **delay** and have a **range**.
 Upon explosion, bombs color the cells of their explosion area with the color
 of the player that dropped the bomb — killing any character and exploding any bomb present in the explosion area.
 
-The explosion area of a bomb can be determined from its range and its **type**,
-which is either *thin* or *fat*.
-
-Thin bombs
-~~~~~~~~~~
-Thin bombs explode in straight lines in all 6 directions and cover up to *range*
+Bombs explode in straight lines in all 6 directions and cover up to *range*
 cells in each direction. A line is stopped if it encounters a wall — or after *range* cells have been covered.
 
-The animation below shows a simple game scenario involving a thin bomb.
+The animation below shows a simple game scenario involving a bomb.
 
-1. On first turn, Green drops a thin bomb (delay=3, range=2) and moves away from it.
+1. On first turn, Green drops a bomb (delay=3, range=2) and moves away from it.
 2. On second turn, Green moves away from the bomb explosion area.
 3. On third turn, nothing happens.
 4. During fourth turn, the bomb explodes as its delay reaches 0.
@@ -99,27 +145,7 @@ The animation below shows a simple game scenario involving a thin bomb.
 
 .. image:: img/explosion_thin.gif
    :scale: 100 %
-   :alt: figuration of a thin bomb lifecycle
-
-Fat bombs
-~~~~~~~~~
-Fat bombs explode all the cells that can be reached by traversing *range* cells or less — walls cannot be traversed.
-This means that fat bombs can circumvent walls.
-The explosion range can be computed with a `breadth-first search`_ algorithm with depth limited to *range*.
-
-The animation below shows a simple game scenario involving a fat bomb.
-
-1. On first turn, Green drops a fat bomb (delay=3, range=2) and moves away from it.
-2. On second turn, Green moves away from the bomb but remains in its explosion area.
-3. On third turn, nothing happens.
-4. During fourth turn, the bomb explodes as its delay reaches 0.
-   The explosion area is highlighted in orange.
-   At the end of the fourth turn, all the cells of the explosion range have been colored in green.
-   Both Blue and Green are killed in the process as they were in the explosion area.
-
-.. image:: img/explosion_fat.gif
-   :scale: 100 %
-   :alt: figuration of a fat bomb lifecycle
+   :alt: figuration of a bomb lifecycle
 
 Simultaneous explosions
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -161,46 +187,5 @@ see `Simultaneous explosions`_ to understand how the cells of the explosion area
 .. image:: img/explosion_chain_reaction.gif
    :scale: 100 %
    :alt: figuration of explosions in chain reaction
-
-Actions
--------
-TODO
-
-Objective and score
--------------------
-At the end of the game, the agent with the highest score wins the game.
-
-The score of each agent is the cumulated number of cells it controlled throughout the turns.
-In other words, at the end of each turn, the score of each player is increased by the number of
-cells of the player's color.
-
-As an example, consider the following 5-cell board on which 2 players (Blue and Green) play.
-At the beginning, Blue and Green control the same number of cells (1) and have the same score (1).
-
-.. image:: img/score_turn0.png
-   :scale: 100 %
-   :alt: score turn 0
-
-On first turn, Blue moves while Green does not.
-This allows Blue to earn 2 points this turn, while Green only earns 1 point.
-
-.. image:: img/score_turn1.png
-   :scale: 100 %
-   :alt: score turn 1
-
-Green remains motionless in the next turns, while Blue controls more and more cells.
-As a result, Blue's score increases way more than Green's.
-
-.. image:: img/score_turn2.png
-   :scale: 100 %
-   :alt: score turn 2
-
-.. image:: img/score_turn3.png
-   :scale: 100 %
-   :alt: score turn 3
-
-Turn
-----
-TODO
 
 .. _breadth-first search: https://en.wikipedia.org/wiki/Breadth-first_search
