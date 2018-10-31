@@ -7,8 +7,8 @@ hexabomb
 hexabomb is a [netorcai] multi-agent game intended to be played by bots.  
 The game is strongly inspired by Bomberman and Splatoon, with hexagons.
 
-Please read hexabomb's documentation on [readthedocs] for more information
-about the game rules, installation/usage instructions and more.
+[hexabomb's documentation][readthedocs] gives the game rules,
+installation/usage instructions and more.
 
 [netorcai]: https://github.com/netorcai/netorcai
 [readthedocs]: https://hexabomb.readthedocs.io/
