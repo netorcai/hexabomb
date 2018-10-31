@@ -24,8 +24,8 @@ Hexagon[] hexes = {
 
 // Array of players
 Player[] players = {
-    Player.Player(0, "Blue", Hex( 1, 0), graphic("char_blue.eps", "width=1.2cm")),
-    Player.Player(1, "Green", Hex(-1, 0), graphic("char_green.eps", "width=1cm"))
+    Player.Player(0, "Blue", Hex( 1, 0), graphic("char.eps", "width=8mm")),
+    Player.Player(1, "Green", Hex(-1, 0), graphic("char_asleep.eps", "width=7mm"))
 };
 
 // Invisible node to make sure all subfigs have the same size

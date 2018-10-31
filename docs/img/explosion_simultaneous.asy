@@ -56,11 +56,11 @@ Hexagon[] hexes = {
 
 // Array of bombs
 Bomb[] bombs = {
-    Bomb.Bomb(Hex( 0, 0), graphic("fat_bomb.eps", "width=14mm"), 2),
-    Bomb.Bomb(Hex(-3, 3), graphic("fat_bomb.eps", "width=14mm"), 2),
-    Bomb.Bomb(Hex(-3, 0), graphic("thin_bomb.eps", "width=8mm"), 2),
-    Bomb.Bomb(Hex( 0,-3), graphic("thin_bomb.eps", "width=8mm"), 2),
-    Bomb.Bomb(Hex( 2,-3), graphic("thin_bomb.eps", "width=8mm"), 2)
+    Bomb.Bomb(Hex( 0, 0), graphic("bomb.eps", "width=8mm"), 2),
+    Bomb.Bomb(Hex(-3, 3), graphic("bomb.eps", "width=8mm"), 2),
+    Bomb.Bomb(Hex(-3, 0), graphic("bomb.eps", "width=8mm"), 2),
+    Bomb.Bomb(Hex( 0,-3), graphic("bomb.eps", "width=8mm"), 2),
+    Bomb.Bomb(Hex( 2,-3), graphic("bomb.eps", "width=8mm"), 2)
 };
 
 bool should_display_coordinates(Hexagon hex)
