@@ -17,6 +17,7 @@ build score_turn0.pdf score_turn1.pdf score_turn2.pdf score_turn3.pdf: asy_to_pd
 build explosion_turn0.pdf explosion_turn1.pdf explosion_turn2.pdf explosion_turn3.pdf explosion_turn4_before.pdf explosion_turn4.pdf: asy_to_pdf explosion.asy | bomb.eps char.eps
 build explosion_simultaneous_turn0.pdf explosion_simultaneous_turn1.pdf explosion_simultaneous_turn2.pdf explosion_simultaneous_turn3.pdf: asy_to_pdf explosion_simultaneous.asy | bomb.eps
 build explosion_chain_reaction0.pdf explosion_chain_reaction1.pdf explosion_chain_reaction2.pdf explosion_chain_reaction3.pdf explosion_chain_reaction4.pdf explosion_chain_reaction5.pdf explosion_chain_reaction6.pdf explosion_chain_reaction7.pdf: asy_to_pdf explosion_chain_reaction.asy | bomb.eps
+build logo.pdf: asy_to_pdf logo.asy | bomb.eps
 
 # Render some images in PNG.
 rule pdf_to_png
@@ -42,6 +43,7 @@ build explosion_turn2.png: pdf_to_png explosion_turn2.pdf
 build explosion_turn3.png: pdf_to_png explosion_turn3.pdf
 build explosion_turn4_before.png: pdf_to_png explosion_turn4_before.pdf
 build explosion_turn4.png: pdf_to_png explosion_turn4.pdf
+build logo.png: pdf_to_png logo.pdf
 build offsets.png: pdf_to_png offsets.pdf
 build score_turn0.png: pdf_to_png score_turn0.pdf
 build score_turn1.png: pdf_to_png score_turn1.pdf
