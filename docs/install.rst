@@ -80,6 +80,11 @@ Documentation and usage with dub_ are given there.
 
 Build it yourself
 -----------------
+All the projects that have been developed around hexabomb are open source and
+can be built and installed manually.
+Please refer to the documentation of the different projects for building
+instructions.
+All these projects are hosted on the `netorcai GitHub organization`_.
 
 .. _netorcaipkgs: https://github.com/netorcai/pkgs
 .. _Nix: https://nixos.org/nix/
@@ -88,3 +93,4 @@ Build it yourself
 .. _D compiler: https://dlang.org/download.html
 .. _Go: https://golang.org/
 .. _go command: https://golang.org/cmd/go/
+.. _netorcai GitHub organization: https://github.com/netorcai
