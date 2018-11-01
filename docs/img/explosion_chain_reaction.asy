@@ -22,14 +22,14 @@ Hexagon[] hexes = {
     Hex(-2, 2),
     Hex( 0, 1),
     Hex( 1, 0),
-    Hex( 2, 0),
+    Hex( 2, 0, palette3[0]),
 
     Hex( 2,-2),
     Hex(-1,-1),
     Hex(-2, 1),
     Hex(-1, 2),
     Hex( 1, 1),
-    Hex( 2,-1, palette3[0]),
+    Hex( 2,-1),
     Hex( 1,-2),
 
     Hex(-3, 0),
@@ -59,7 +59,7 @@ Hexagon[] hexes = {
 Bomb[] bombs = {
     Bomb.Bomb(Hex( 0, 0), graphic("bomb.eps", "width=8mm"), 3),
     Bomb.Bomb(Hex(-2, 0), graphic("bomb.eps", "width=8mm"), 1),
-    Bomb.Bomb(Hex( 2,-1), graphic("bomb.eps", "width=8mm"), 3),
+    Bomb.Bomb(Hex( 2, 0), graphic("bomb.eps", "width=8mm"), 3),
 };
 
 bool should_display_coordinates(Hexagon hex)
@@ -124,8 +124,8 @@ void render(string filename)
 }
 
 int[] indexes_bomb0 = {0, 2, 3, 4, 6, 11, 12, 17, 18, 34};
-int[] indexes_bomb1 = {1, 5, 7, 8, 9, 13, 14, 15, 16, 18};
-int[] indexes_bomb2 = {10, 22, 24, 25, 27};
+int[] indexes_bomb1 = {1, 5, 7, 8, 9, 18};
+int[] indexes_bomb2 = {10, 14, 15, 25, 26, 27};
 
 void doTurn()
 {
@@ -162,11 +162,11 @@ void doTurn()
     }
     else if (turn == 5)
     {
-        coordinates_to_highlight = Hex( 2,-1);
+        coordinates_to_highlight = Hex( 2, 0);
     }
     else if (turn == 6)
     {
-        // Explosion area of the bomb at ( 2,-1)
+        // Explosion area of the bomb at ( 2, 0)
         for (int index : indexes_bomb2)
         {
             hexes[index].fill_color = orange;

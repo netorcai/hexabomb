@@ -24,8 +24,8 @@ Hexagon[] hexes = {
 
 // Array of players
 Player[] players = {
-    Player.Player(0, "Blue", Hex( 1, 0), graphic("char.eps", "width=8mm")),
-    Player.Player(1, "Green", Hex(-1, 0), graphic("char_asleep.eps", "width=7mm"))
+    Player.Player(0, "Blue", Hex( 1, 0), graphic("char.eps", "width=1.1cm")),
+    Player.Player(1, "Green", Hex(-1, 0), graphic("char_asleep.eps", "width=1.2cm"))
 };
 
 // Invisible node to make sure all subfigs have the same size
@@ -34,6 +34,13 @@ draw(circle((4.7,0),0), invisible);
 void render(string filename)
 {
     save();
+
+    // Draw a white background
+    real xmin=-3;
+    real ymin=-1;
+    real xmax=5.5;
+    real ymax=2.6;
+    fill((xmin,ymin) -- (xmin,ymax) -- (xmax,ymax) -- (xmax,ymin) -- cycle, white);
 
     // Draw the hexagons
     for (Hexagon hex : hexes)

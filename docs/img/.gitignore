@@ -1,2 +1,5 @@
 .ninja_log
 .ninja_deps
+*.png
+*.pdf
+*.eps

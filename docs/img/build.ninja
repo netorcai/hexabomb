@@ -55,3 +55,4 @@ rule gen_animated_gif
 build explosion.gif: gen_animated_gif explosion_turn0.png explosion_turn1.png explosion_turn2.png explosion_turn3.png  explosion_turn4_before.png explosion_turn4.png
 build explosion_simultaneous.gif: gen_animated_gif explosion_simultaneous_turn0.png explosion_simultaneous_turn1.png explosion_simultaneous_turn2.png explosion_simultaneous_turn3.png
 build explosion_chain_reaction.gif: gen_animated_gif explosion_chain_reaction0.png explosion_chain_reaction1.png explosion_chain_reaction2.png explosion_chain_reaction3.png explosion_chain_reaction4.png explosion_chain_reaction5.png explosion_chain_reaction6.png explosion_chain_reaction7.png
+build score.gif: gen_animated_gif score_turn0.png score_turn1.png score_turn2.png score_turn3.png

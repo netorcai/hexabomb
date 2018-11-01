@@ -84,7 +84,11 @@ The exhaustive list of what each character can do is the following.
 
 - Do nothing.
 - **move**: Move one cell towards one of the 6 directions.
+  The character must be alive and the target cell must be empty.
 - **bomb**: Drop a bomb in the character current cell.
+  The character must be alive and its cell must NOT contain a bomb.
+- **revive**: Revive a dead character on a given cell.
+  The character must be dead and the target cell must be empty.
 
 hexabomb will apply the players' decisions in best effort.
 In case of conflicts, the faster player is priority.
@@ -98,30 +102,18 @@ In other words, at the end of each turn, the score of each player is increased b
 cells of the player's color.
 
 As an example, consider the following 5-cell board on which 2 players (Blue and Green) play.
-At the beginning, Blue and Green control the same number of cells (1) and have the same score (1).
 
-.. image:: img/score_turn0.png
+.. image:: img/score.gif
    :scale: 100 %
-   :alt: score turn 0
+   :alt: figuration of the scoring system
+
+At the beginning, Blue and Green control the same number of cells (1) and have the same score (1).
 
 On first turn, Blue moves while Green does not.
 This allows Blue to earn 2 points this turn, while Green only earns 1 point.
 
-.. image:: img/score_turn1.png
-   :scale: 100 %
-   :alt: score turn 1
-
 Green remains motionless in the next turns, while Blue controls more and more cells.
 As a result, Blue's score increases way more than Green's.
-
-.. image:: img/score_turn2.png
-   :scale: 100 %
-   :alt: score turn 2
-
-.. image:: img/score_turn3.png
-   :scale: 100 %
-   :alt: score turn 3
-
 
 Bombs
 -----
@@ -135,15 +127,14 @@ cells in each direction. A line is stopped if it encounters a wall — or after 
 
 The animation below shows a simple game scenario involving a bomb.
 
-1. On first turn, Green drops a bomb (delay=3, range=2) and moves away from it.
-2. On second turn, Green moves away from the bomb explosion area.
-3. On third turn, nothing happens.
-4. During fourth turn, the bomb explodes as its delay reaches 0.
+1. On first turn, Green drops a bomb (delay=3, range=2).
+2. On second and third turns, Green moves away from the explosion area.
+3. During fourth turn, the bomb explodes as its delay reaches 0.
    The explosion area is highlighted in orange.
    At the end of the fourth turn, all the cells of the explosion range have been colored in green.
    Blue is killed in the process as it was in the explosion area.
 
-.. image:: img/explosion_thin.gif
+.. image:: img/explosion.gif
    :scale: 100 %
    :alt: figuration of a bomb lifecycle
 
@@ -153,25 +144,27 @@ Several bombs can explode at the same time.
 This may happen when the delay of several bombs reaches 0 at the same time or in case of `Chain reaction`_.
 
 Simultaneous explosions can lead to conflicts about the coloration of the cells — as some cells can be in the explosion area of several bombs of different colors.
-This is how the color of an exploded cell is determined by hexabomb in case of simulateneous explosions.
+The final color of an exploded cells is only determined by the bombs that
+explode the cell — and by the distance of these bombs to the exploded cell.
+This is how the color of such a cell is computed.
 
 1. If the cell is strictly closer to one bomb than the others, the cell is colored by the color of the closest bomb.
 2. If all the bombs of the set of the closest bombs to that cell have the same color, the cell is colored by the color of the bombs.
 3. Otherwise (e.g., if any two bombs of the set of the closest bombs to that cell have different colors), the cell color is turned to neutral.
 
 Simultaneous explosions are figured just below.
+In this example, all the bombs have a range of 3 cells.
 
 .. image:: img/explosion_simultaneous.gif
    :scale: 100 %
    :alt: figuration of simultaneous explosions
 
 Most of the exploded cells are closer to one bomb from the others and take the bomb's color.
-The exploded cells that are at the same distance to multiple bombs are thickly bordered orange.
+The interesting cells are thickly bordered orange.
 
-- Cell at :math:`(1,-3)` becomes green because the two closest bombs exploding it are green — bombs at :math:`(0,-3)` and :math:`(2,-3)`.
-- Cell at :math:`(2,-1)` stays neutral because the two closest bombs exploding it are of different colors — bombs at :math:`(0,0)` and :math:`(2,-3)`.
-- Cell at :math:`(-1,2)` stays neutral because the two closest bombs exploding it are of different colors — bombs at :math:`(0,0)` and :math:`(-3,3)`.
-- Cell at :math:`(-2,1)` becomes neutral because the two closest bombs exploding it are of different colors — bombs at :math:`(0,0)` and :math:`(-3,3)`.
+- Cells at :math:`(1,-3)`, :math:`(2,-2)` and :math:`(3,-1)` become green because the two closest bombs that explode each cell are green.
+- Cell at :math:`(1,0)` stays neutral because the set of the closest bombs that explode the cell contains bombs of different colors.
+- Cell at :math:`(-1,2)` becomes green because it is only covered by the green bomb at :math:`(2,-1)`. This may seem counterintuitive because of the blue bomb at :math:`(0,0)` that prevented cells at :math:`(1,0)` and :math:`(0,1)` to turn green. **Explosions cannot reduce the explosion range of each other, they can only interfere with the final color of the exploded cells.**
 
 Chain reaction
 ~~~~~~~~~~~~~~

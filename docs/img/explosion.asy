@@ -85,17 +85,17 @@ void doTurn()
 
     if (turn == 1)
     {
-        players[1].hex = Hex(-1, 0);
         draw_bomb = true;
     }
     else if (turn == 2)
     {
-        players[1].hex = Hex(-1,-1);
-        hexes[11].fill_color = palette3[1];
+        players[1].hex = Hex(-1, 0);
         bombs[0].delay = 2;
     }
     else if (turn == 3)
     {
+        players[1].hex = Hex(-1,-1);
+        hexes[11].fill_color = palette3[1];
         bombs[0].delay = 1;
     }
 }
