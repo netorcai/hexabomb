@@ -343,7 +343,7 @@ class Game
     {
         Game g = new Game(`{
           "cells":[
-            {"q":0, "r":0, "wall":false}
+            {"q":0, "r":0}
           ],
           "initial_positions":{
             "0": [{"q":0, "r":0}]
@@ -406,8 +406,8 @@ class Game
     {
         Game g = new Game(`{
           "cells":[
-            {"q":0, "r":0, "wall":false},
-            {"q":0, "r":1, "wall":false}
+            {"q":0, "r":0},
+            {"q":0, "r":1}
           ],
           "initial_positions":{
             "0": [{"q":0, "r":0}]
@@ -489,9 +489,9 @@ class Game
     {
         Game g = new Game(`{
           "cells":[
-            {"q":0, "r":0, "wall":false},
-            {"q":0, "r":1, "wall":false},
-            {"q":0, "r":2, "wall":false}
+            {"q":0, "r":0},
+            {"q":0, "r":1},
+            {"q":0, "r":2}
           ],
           "initial_positions":{
             "0": [{"q":0, "r":0}],
@@ -1250,8 +1250,8 @@ class Game
     {
         auto g = new Game(`{
           "cells":[
-            {"q":0,"r":0,"wall":false},
-            {"q":0,"r":1,"wall":false}
+            {"q":0,"r":0},
+            {"q":0,"r":1}
           ],
           "initial_positions":{
             "0": [{"q":0, "r":0}],
@@ -1273,43 +1273,43 @@ private Game generateBasicGame()
 {
     auto g = new Game(`{
       "cells":[
-        {"q":-3,"r":0,"wall":false},
-        {"q":-3,"r":1,"wall":false},
-        {"q":-3,"r":2,"wall":false},
-        {"q":-3,"r":3,"wall":false},
-        {"q":-2,"r":-1,"wall":false},
-        {"q":-2,"r":0,"wall":false},
-        {"q":-2,"r":1,"wall":false},
-        {"q":-2,"r":2,"wall":false},
-        {"q":-2,"r":3,"wall":false},
-        {"q":-1,"r":-2,"wall":false},
-        {"q":-1,"r":-1,"wall":false},
-        {"q":-1,"r":0,"wall":false},
-        {"q":-1,"r":1,"wall":false},
-        {"q":-1,"r":2,"wall":false},
-        {"q":-1,"r":3,"wall":false},
-        {"q":0,"r":-3,"wall":false},
-        {"q":0,"r":-2,"wall":false},
-        {"q":0,"r":-1,"wall":false},
-        {"q":0,"r":0,"wall":false},
-        {"q":0,"r":1,"wall":false},
-        {"q":0,"r":2,"wall":false},
-        {"q":0,"r":3,"wall":false},
-        {"q":1,"r":-3,"wall":false},
-        {"q":1,"r":-2,"wall":false},
-        {"q":1,"r":-1,"wall":false},
-        {"q":1,"r":0,"wall":false},
-        {"q":1,"r":1,"wall":false},
-        {"q":1,"r":2,"wall":false},
-        {"q":2,"r":-3,"wall":false},
-        {"q":2,"r":-2,"wall":false},
-        {"q":2,"r":-1,"wall":false},
-        {"q":2,"r":0,"wall":false},
-        {"q":2,"r":1,"wall":false},
-        {"q":3,"r":-3,"wall":false},
-        {"q":3,"r":-2,"wall":false},
-        {"q":3,"r":-1,"wall":false},
-        {"q":3,"r":0,"wall":false}],
+        {"q":-3,"r":0},
+        {"q":-3,"r":1},
+        {"q":-3,"r":2},
+        {"q":-3,"r":3},
+        {"q":-2,"r":-1},
+        {"q":-2,"r":0},
+        {"q":-2,"r":1},
+        {"q":-2,"r":2},
+        {"q":-2,"r":3},
+        {"q":-1,"r":-2},
+        {"q":-1,"r":-1},
+        {"q":-1,"r":0},
+        {"q":-1,"r":1},
+        {"q":-1,"r":2},
+        {"q":-1,"r":3},
+        {"q":0,"r":-3},
+        {"q":0,"r":-2},
+        {"q":0,"r":-1},
+        {"q":0,"r":0},
+        {"q":0,"r":1},
+        {"q":0,"r":2},
+        {"q":0,"r":3},
+        {"q":1,"r":-3},
+        {"q":1,"r":-2},
+        {"q":1,"r":-1},
+        {"q":1,"r":0},
+        {"q":1,"r":1},
+        {"q":1,"r":2},
+        {"q":2,"r":-3},
+        {"q":2,"r":-2},
+        {"q":2,"r":-1},
+        {"q":2,"r":0},
+        {"q":2,"r":1},
+        {"q":3,"r":-3},
+        {"q":3,"r":-2},
+        {"q":3,"r":-1},
+        {"q":3,"r":0}],
       "initial_positions":{
         "0": [{"q":0, "r":0}],
         "1": [{"q":0, "r":1}]

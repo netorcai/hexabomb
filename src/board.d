@@ -433,7 +433,7 @@ class Board
                              Position(-1, 0) : 1, Position(-2, 0) : 2, Position(-3, 0) : 3,
                              Position(-1, 1) : 1, Position(-2, 2) : 2, Position(-3, 3) : 3,
                              Position( 0, 1) : 1, Position( 0, 2) : 2, Position( 0, 3) : 3],
-                            "Range 3, 1 wall");
+                            "Range 3, 1 hole");
     }
 
     override bool opEquals(const Object o) @safe @nogc pure const
