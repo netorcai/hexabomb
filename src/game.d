@@ -127,8 +127,6 @@ class Game
             {
                 enforce(b.cellExists(pos),
                     "There is no cell at " ~ pos.toString);
-                enforce(!b.cellAt(pos).isWall,
-                    "Cell is a wall at " ~ pos.toString);
                 enforce(!(pos in _marks),
                     "Duplication of initial cell " ~ pos.toString);
                 _marks[pos] = true;
@@ -167,14 +165,6 @@ class Game
         assertThrown(checkInitialPositions(positions,b));
         assert(collectExceptionMsg(checkInitialPositions(positions,b))
             .startsWith("There is no cell at"));
-
-        positions = [
-            0: [Position(0,0)],
-        ];
-        Board bwall = new Board(`[{"q":0, "r":0, "wall":true}]`.parseJSON);
-        assertThrown(checkInitialPositions(positions,bwall));
-        assert(collectExceptionMsg(checkInitialPositions(positions,bwall))
-            .startsWith("Cell is a wall at"));
 
         positions = [
             0: [Position(0,0)],
@@ -446,7 +436,7 @@ class Game
     body
     {
         JSONValue v = `{}`.parseJSON;
-        v.object["cells"] = _board.toJSON(true, false);
+        v.object["cells"] = _board.toJSON;
         v.object["characters"] = describeCharacters;
         v.object["bombs"] = describeBombs;
 
@@ -456,8 +446,8 @@ class Game
     {
         Game g = new Game(`{
           "cells":[
-            {"q":0, "r":0, "wall":false},
-            {"q":0, "r":1, "wall":false}
+            {"q":0, "r":0},
+            {"q":0, "r":1}
           ],
           "initial_positions":{
             "0": [{"q":0, "r":0}],
@@ -468,8 +458,8 @@ class Game
         assert(g.describeInitialState.toString == `{
             "bombs": [],
             "cells":[
-              {"q":0, "r":0, "wall":false},
-              {"q":0, "r":1, "wall":false}
+              {"q":0, "r":0, "color":1},
+              {"q":0, "r":1, "color":2}
             ],
             "characters":[
               {"id":0, "color":1, "q":0, "r":0, "alive":true},
@@ -487,7 +477,7 @@ class Game
     body
     {
         JSONValue v = `{}`.parseJSON;
-        v.object["cells"] = _board.toJSON(false, true);
+        v.object["cells"] = _board.toJSON;
         v.object["characters"] = describeCharacters;
         v.object["bombs"] = describeBombs;
         v.object["score"] = describeScore;
@@ -809,8 +799,6 @@ class Game
                 auto cell = _board.cellAtOrNull(action.revivePosition);
                 enforce(cell !is null,
                     format!"Character id=%s cannot be revived (no cell at %s)"(c.id, action.revivePosition));
-                enforce(!cell.isWall,
-                    format!"Character id=%s cannot be revived (cell at %s is a wall)"(c.id, action.revivePosition));
 
                 // Not traversable because of a bomb or a player.
                 // This may be invalid because of recent actions from other players.
@@ -832,8 +820,6 @@ class Game
                 auto nextCell = _board.cellAtOrNull(nextPosition);
                 enforce(nextCell !is null,
                     format!"Character id=%s cannot be moved (no cell at %s)"(c.id, nextPosition));
-                enforce(!nextCell.isWall,
-                    format!"Character id=%s cannot be moved (cell at %s is a wall)"(c.id, nextPosition));
 
                 // Not traversable because of a bomb or a player.
                 // This may be invalid because of recent actions from other players.
@@ -873,7 +859,7 @@ class Game
         CharacterActions a;
 
         // Initial game alterations
-        g._board.cellAt(Position(3,-3)).addWall;
+        g._board.removeCell(Position(3,-3));
         g._board.cellAt(Position(1,-3)).addBomb;
         g._bombs ~= Bomb(Position(1,-3), 0, 10, 100);
 
@@ -906,11 +892,6 @@ class Game
         assertThrown(g.applyAction(a, 1));
         assert(collectExceptionMsg(g.applyAction(a, 1)) ==
             `Character id=0 cannot be revived (no cell at {q=42,r=42})`);
-        // Invalid revive position (cell is a wall)
-        a.revivePosition = Position(3,-3);
-        assertThrown(g.applyAction(a, 1));
-        assert(collectExceptionMsg(g.applyAction(a, 1)) ==
-            `Character id=0 cannot be revived (cell at {q=3,r=-3} is a wall)`);
         // Bad revive position (cell is a character)
         a.revivePosition = Position(0,1);
         assert(g.applyAction(a, 1) == false);
@@ -936,11 +917,6 @@ class Game
         assertThrown(g.applyAction(a, 1));
         assert(collectExceptionMsg(g.applyAction(a, 1)) ==
             `Character id=0 cannot be moved (no cell at {q=2,r=-4})`);
-        // Into wall
-        a.direction = Direction.X_PLUS;
-        assertThrown(g.applyAction(a, 1));
-        assert(collectExceptionMsg(g.applyAction(a, 1)) ==
-            `Character id=0 cannot be moved (cell at {q=3,r=-3} is a wall)`);
         // Into bomb
         a.direction = Direction.X_MINUS;
         assert(g.applyAction(a, 1) == false);

@@ -138,11 +138,7 @@ class Board
             p.q = o["q"].getInt;
             p.r = o["r"].getInt;
 
-            Cell c;
-            if (o["wall"].getBool)
-                c.addWall;
-
-            addCell(p, c);
+            addCell(p, Cell());
         }
 
         updateNeighborsCache;
@@ -189,6 +185,16 @@ class Board
     body
     {
         _cells[pos] = cell;
+    }
+
+    void removeCell(in Position pos) @safe
+    in
+    {
+        assert(cellExists(pos), "There is no cell at pos=" ~ pos.toString);
+    }
+    body
+    {
+        _cells.remove(pos);
     }
 
 
@@ -353,7 +359,7 @@ class Board
             foreach(dist ; 1..bomb.range+1)
             {
                 pos = pos + offset;
-                if (cellExists(pos) && cellAt(pos).isExplodable)
+                if (cellExists(pos))
                     explodingCells[pos] = dist;
                 else
                     break;
@@ -415,8 +421,9 @@ class Board
                              Position( 0, 1) : 1, Position( 0, 2) : 2, Position( 0, 3) : 3],
                             "Range 3");
 
-        // Distance 3, 1 wall.
-        b.cellAt(Position( 1, 0)).addWall;
+        // Distance 3, 1 hole.
+        b.removeCell(Position( 1, 0));
+        b.updateNeighborsCache;
 
         bomb.range = 3;
         wrapperAssertEquals(b.computeExplosionRange(bomb),
@@ -474,15 +481,15 @@ class Board
         assert(b.toString == "{cells:[], neighbors:[]}");
 
         b._cells = [
-            Position(0,0): Cell(1, false, true, false),
-            Position(0,1): Cell(2, true, false, false)];
+            Position(0,0): Cell(1, false, true),
+            Position(0,1): Cell(2, true, false)];
         assert(b.toString == "{cells:[{q=0,r=0}:{color=1,bomb}, {q=0,r=1}:{color=2,char}], neighbors:[]}");
 
         b.updateNeighborsCache;
         assert(b.toString == "{cells:[{q=0,r=0}:{color=1,bomb}, {q=0,r=1}:{color=2,char}], neighbors:[{q=0,r=0}:[{q=0,r=1}], {q=0,r=1}:[{q=0,r=0}]]}");
     }
 
-    JSONValue toJSON(bool walls, bool colors) const
+    JSONValue toJSON() const
     out(r)
     {
         assert(r.type == JSON_TYPE.ARRAY);
@@ -501,12 +508,7 @@ class Board
             JSONValue cellValue = `{}`.parseJSON;
             cellValue.object["q"] = t.position.q;
             cellValue.object["r"] = t.position.r;
-
-            if (walls)
-                cellValue.object["wall"] = t.cell.isWall;
-
-            if (colors)
-                cellValue.object["color"] = t.cell.color;
+            cellValue.object["color"] = t.cell.color;
 
             v.array ~= cellValue;
         }
@@ -516,14 +518,14 @@ class Board
     unittest
     {
         JSONValue boardDescription = `[
-          {"q": 0, "r":-3, "wall": false},
-          {"q": 1, "r":-3, "wall": false},
-          {"q": 2, "r":-5, "wall": true},
-          {"q": 2, "r":-3, "wall": true},
-          {"q": 3, "r":-3, "wall": false}
+          {"q": 0, "r":-3, "color": 0},
+          {"q": 1, "r":-3, "color": 0},
+          {"q": 2, "r":-5, "color": 0},
+          {"q": 2, "r":-3, "color": 0},
+          {"q": 3, "r":-3, "color": 0}
         ]`.parseJSON;
         Board b = new Board(boardDescription);
-        assert(b.toJSON(true, false) == boardDescription);
+        assert(b.toJSON == boardDescription);
     }
 
     uint[uint] cellCountPerColor()
@@ -593,55 +595,55 @@ Board generateEmptyBoard()
 unittest // Construction from JSON
 {
     Board b1 = new Board(`[
-        {"q": 0 , "r":-3, "wall": false},
-        {"q": 1 , "r":-3, "wall": false},
-        {"q": 2 , "r":-3, "wall": false},
-        {"q": 3 , "r":-3, "wall": false},
+        {"q": 0 , "r":-3},
+        {"q": 1 , "r":-3},
+        {"q": 2 , "r":-3},
+        {"q": 3 , "r":-3},
 
-        {"q": -1, "r":-2, "wall": false},
-        {"q": 0 , "r":-2, "wall": false},
-        {"q": 1 , "r":-2, "wall": false},
-        {"q": 2 , "r":-2, "wall": false},
-        {"q": 3 , "r":-2, "wall": false},
+        {"q": -1, "r":-2},
+        {"q": 0 , "r":-2},
+        {"q": 1 , "r":-2},
+        {"q": 2 , "r":-2},
+        {"q": 3 , "r":-2},
 
-        {"q": -2, "r":-1, "wall": false},
-        {"q": -1, "r":-1, "wall": false},
-        {"q": 0 , "r":-1, "wall": false},
-        {"q": 1 , "r":-1, "wall": false},
-        {"q": 2 , "r":-1, "wall": false},
-        {"q": 3 , "r":-1, "wall": false},
+        {"q": -2, "r":-1},
+        {"q": -1, "r":-1},
+        {"q": 0 , "r":-1},
+        {"q": 1 , "r":-1},
+        {"q": 2 , "r":-1},
+        {"q": 3 , "r":-1},
 
-        {"q": -3, "r": 0, "wall": false},
-        {"q": -2, "r": 0, "wall": false},
-        {"q": -1, "r": 0, "wall": false},
-        {"q": 0 , "r": 0, "wall": false},
-        {"q": 1 , "r": 0, "wall": false},
-        {"q": 2 , "r": 0, "wall": false},
-        {"q": 3 , "r": 0, "wall": false},
+        {"q": -3, "r": 0},
+        {"q": -2, "r": 0},
+        {"q": -1, "r": 0},
+        {"q": 0 , "r": 0},
+        {"q": 1 , "r": 0},
+        {"q": 2 , "r": 0},
+        {"q": 3 , "r": 0},
 
-        {"q": -3, "r": 1, "wall": false},
-        {"q": -2, "r": 1, "wall": false},
-        {"q": -1, "r": 1, "wall": false},
-        {"q": 0 , "r": 1, "wall": false},
-        {"q": 1 , "r": 1, "wall": false},
-        {"q": 2 , "r": 1, "wall": false},
+        {"q": -3, "r": 1},
+        {"q": -2, "r": 1},
+        {"q": -1, "r": 1},
+        {"q": 0 , "r": 1},
+        {"q": 1 , "r": 1},
+        {"q": 2 , "r": 1},
 
-        {"q": -3, "r": 2, "wall": false},
-        {"q": -2, "r": 2, "wall": false},
-        {"q": -1, "r": 2, "wall": false},
-        {"q": 0 , "r": 2, "wall": true},
-        {"q": 1 , "r": 2, "wall": false},
+        {"q": -3, "r": 2},
+        {"q": -2, "r": 2},
+        {"q": -1, "r": 2},
+        {"q": 1 , "r": 2},
 
-        {"q": -3, "r": 3, "wall": false},
-        {"q": -2, "r": 3, "wall": false},
-        {"q": -1, "r": 3, "wall": false},
-        {"q": 0 , "r": 3, "wall": false}
+        {"q": -3, "r": 3},
+        {"q": -2, "r": 3},
+        {"q": -1, "r": 3},
+        {"q": 0 , "r": 3}
     ]`.parseJSON);
 
     Board b2 = generateEmptyBoard;
     assert(b1 != b2);
 
-    b2.cellAt(Position(0,2)).addWall;
+    b1.addCell(Position(0,2), Cell());
+    b1.updateNeighborsCache;
     assert(b1 == b2);
 
     string s = `[1]`;
