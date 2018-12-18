@@ -7,11 +7,11 @@ from palette access palette3;
 Hexagon[] hexes = {
     Hex(0 , 0),
     Hex(1 , 0, palette3[0]),
-    Hex(1 ,-1, gray(0.1)),
-    Hex(0 ,-1, gray(0.1)),
+    Hex(1 ,-1),
+    Hex(0 ,-1),
     Hex(-1, 0, palette3[1]),
-    Hex( 0, 1, gray(0.1)),
-    Hex(-1, 1, gray(0.1)),
+    Hex( 0, 1),
+    Hex(-1, 1),
 
     Hex(2 , 0, palette3[0]),
     Hex(2 ,-2),
