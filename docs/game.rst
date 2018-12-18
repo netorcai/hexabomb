@@ -175,3 +175,10 @@ see `Simultaneous explosions`_ to understand how the cells of the explosion area
    :alt: figuration of explosions in chain reaction
 
 .. _breadth-first search: https://en.wikipedia.org/wiki/Breadth-first_search
+
+Characters life and death
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. todo::
+
+  Write life and death description.

@@ -12,4 +12,5 @@ Welcome to hexabomb's documentation!
 
    install
    game
+   details
    changelog
