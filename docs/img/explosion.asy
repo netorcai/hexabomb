@@ -29,10 +29,7 @@ Hexagon[] hexes = {
     Hex(-1, 2),
     Hex( 1, 1),
     Hex( 2,-1),
-    Hex( 1,-2),
-
-    Hex( 0, 2, gray(0.1)),
-    Hex(1 ,-1, gray(0.1))
+    Hex( 1,-2)
 };
 
 // Array of players

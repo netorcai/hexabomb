@@ -20,35 +20,38 @@ build explosion_chain_reaction0.pdf explosion_chain_reaction1.pdf explosion_chai
 build logo.pdf: asy_to_pdf logo.asy | bomb.eps
 
 # Render some images in PNG.
-rule pdf_to_png
+rule pdf_to_png_light
     command = convert -density 150 $in -quality 100 $out
 
-build board_example.png: pdf_to_png board_example.pdf
-build cell_types.png: pdf_to_png cell_types.pdf
-build explosion_chain_reaction0.png: pdf_to_png explosion_chain_reaction0.pdf
-build explosion_chain_reaction1.png: pdf_to_png explosion_chain_reaction1.pdf
-build explosion_chain_reaction2.png: pdf_to_png explosion_chain_reaction2.pdf
-build explosion_chain_reaction3.png: pdf_to_png explosion_chain_reaction3.pdf
-build explosion_chain_reaction4.png: pdf_to_png explosion_chain_reaction4.pdf
-build explosion_chain_reaction5.png: pdf_to_png explosion_chain_reaction5.pdf
-build explosion_chain_reaction6.png: pdf_to_png explosion_chain_reaction6.pdf
-build explosion_chain_reaction7.png: pdf_to_png explosion_chain_reaction7.pdf
-build explosion_simultaneous_turn0.png: pdf_to_png explosion_simultaneous_turn0.pdf
-build explosion_simultaneous_turn1.png: pdf_to_png explosion_simultaneous_turn1.pdf
-build explosion_simultaneous_turn2.png: pdf_to_png explosion_simultaneous_turn2.pdf
-build explosion_simultaneous_turn3.png: pdf_to_png explosion_simultaneous_turn3.pdf
-build explosion_turn0.png: pdf_to_png explosion_turn0.pdf
-build explosion_turn1.png: pdf_to_png explosion_turn1.pdf
-build explosion_turn2.png: pdf_to_png explosion_turn2.pdf
-build explosion_turn3.png: pdf_to_png explosion_turn3.pdf
-build explosion_turn4_before.png: pdf_to_png explosion_turn4_before.pdf
-build explosion_turn4.png: pdf_to_png explosion_turn4.pdf
-build logo.png: pdf_to_png logo.pdf
-build offsets.png: pdf_to_png offsets.pdf
-build score_turn0.png: pdf_to_png score_turn0.pdf
-build score_turn1.png: pdf_to_png score_turn1.pdf
-build score_turn2.png: pdf_to_png score_turn2.pdf
-build score_turn3.png: pdf_to_png score_turn3.pdf
+rule pdf_to_png_dark
+    command = convert -density 150 $in -quality 100 -background '#A0A0A0' -alpha remove $out
+
+build board_example.png: pdf_to_png_light board_example.pdf
+build cell_types.png: pdf_to_png_light cell_types.pdf
+build explosion_chain_reaction0.png: pdf_to_png_dark explosion_chain_reaction0.pdf
+build explosion_chain_reaction1.png: pdf_to_png_dark explosion_chain_reaction1.pdf
+build explosion_chain_reaction2.png: pdf_to_png_dark explosion_chain_reaction2.pdf
+build explosion_chain_reaction3.png: pdf_to_png_dark explosion_chain_reaction3.pdf
+build explosion_chain_reaction4.png: pdf_to_png_dark explosion_chain_reaction4.pdf
+build explosion_chain_reaction5.png: pdf_to_png_dark explosion_chain_reaction5.pdf
+build explosion_chain_reaction6.png: pdf_to_png_dark explosion_chain_reaction6.pdf
+build explosion_chain_reaction7.png: pdf_to_png_dark explosion_chain_reaction7.pdf
+build explosion_simultaneous_turn0.png: pdf_to_png_dark explosion_simultaneous_turn0.pdf
+build explosion_simultaneous_turn1.png: pdf_to_png_dark explosion_simultaneous_turn1.pdf
+build explosion_simultaneous_turn2.png: pdf_to_png_dark explosion_simultaneous_turn2.pdf
+build explosion_simultaneous_turn3.png: pdf_to_png_dark explosion_simultaneous_turn3.pdf
+build explosion_turn0.png: pdf_to_png_dark explosion_turn0.pdf
+build explosion_turn1.png: pdf_to_png_dark explosion_turn1.pdf
+build explosion_turn2.png: pdf_to_png_dark explosion_turn2.pdf
+build explosion_turn3.png: pdf_to_png_dark explosion_turn3.pdf
+build explosion_turn4_before.png: pdf_to_png_dark explosion_turn4_before.pdf
+build explosion_turn4.png: pdf_to_png_dark explosion_turn4.pdf
+build logo.png: pdf_to_png_light logo.pdf
+build offsets.png: pdf_to_png_light offsets.pdf
+build score_turn0.png: pdf_to_png_light score_turn0.pdf
+build score_turn1.png: pdf_to_png_light score_turn1.pdf
+build score_turn2.png: pdf_to_png_light score_turn2.pdf
+build score_turn3.png: pdf_to_png_light score_turn3.pdf
 
 # Merge some raster images in animated GIF.
 rule gen_animated_gif

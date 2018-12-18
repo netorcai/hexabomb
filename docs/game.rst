@@ -54,16 +54,9 @@ and that going into a given direction always results in the same coordinate tran
 
 Cells
 -----
-Two types of cells exist on the board: **usual cells** and **walls**.
-
-Usual cells can host characters and bombs, and have a color (that can be neutral).
-Characters can move into usual cells if they are empty — i.e., if they do not host characters nor bombs.
-Usual cells can be colored by a bomb if they are in the bomb's explosion range.
-
-Contrary to usual cells, walls are obstacles without color.
-Characters cannot move into walls.
-Bombs cannot traverse walls.
-Bomb explosions are completely stopped by walls.
+Cells can host characters and bombs, and have a color (that can be neutral).
+Characters can move into cells if they are empty — i.e., if they do not host characters nor bombs.
+Cells can be colored by a bomb if they are in the bomb's explosion range.
 
 .. image:: img/cell_types.png
    :scale: 100 %
@@ -84,11 +77,11 @@ The exhaustive list of what each character can do is the following.
 
 - Do nothing.
 - **move**: Move one cell towards one of the 6 directions.
-  The character must be alive and the target cell must be empty.
+  The character must be alive. The target cell must exist and be empty.
 - **bomb**: Drop a bomb in the character current cell.
   The character must be alive and its cell must NOT contain a bomb.
 - **revive**: Revive a dead character on a given cell.
-  The character must be dead and the target cell must be empty.
+  The character must be dead. The target cell must exist and be empty.
 
 hexabomb will apply the players' decisions in best effort.
 In case of conflicts, the faster player is priority.
@@ -123,7 +116,7 @@ Upon explosion, bombs color the cells of their explosion area with the color
 of the player that dropped the bomb — killing any character and exploding any bomb present in the explosion area.
 
 Bombs explode in straight lines in all 6 directions and cover up to *range*
-cells in each direction. A line is stopped if it encounters a wall — or after *range* cells have been covered.
+cells in each direction. A line is stopped if it encounters a non-existing cell — or after *range* cells have been covered.
 
 The animation below shows a simple game scenario involving a bomb.
 

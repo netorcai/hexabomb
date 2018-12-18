@@ -49,10 +49,7 @@ Hexagon[] hexes = {
     Hex(-2, 3),
     Hex(-3, 3, palette3[1]),
     Hex(-3, 2, palette3[0]),
-    Hex(-3, 1, palette3[0]),
-
-    Hex( 0, 2, gray(0.1)),
-    Hex( 1,-1, gray(0.1))
+    Hex(-3, 1, palette3[0])
 };
 
 // Array of bombs
@@ -68,9 +65,6 @@ Bomb[] bombs = {
 
 bool should_display_coordinates(Hexagon hex)
 {
-    if (hex.fill_color == gray(0.1))
-        return false;
-
     if (turn > 1)
         return true;
 
