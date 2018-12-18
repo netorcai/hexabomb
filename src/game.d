@@ -427,47 +427,6 @@ class Game
             .parseJSON.toString);
     }
 
-    /// Generate a JSON description of the game state
-    JSONValue describeInitialState() const
-    out(r)
-    {
-        assert(r.type == JSON_TYPE.OBJECT);
-    }
-    body
-    {
-        JSONValue v = `{}`.parseJSON;
-        v.object["cells"] = _board.toJSON;
-        v.object["characters"] = describeCharacters;
-        v.object["bombs"] = describeBombs;
-
-        return v;
-    }
-    unittest
-    {
-        Game g = new Game(`{
-          "cells":[
-            {"q":0, "r":0},
-            {"q":0, "r":1}
-          ],
-          "initial_positions":{
-            "0": [{"q":0, "r":0}],
-            "1": [{"q":0, "r":1}]
-          }
-        }`.parseJSON);
-        g.initializeGame(2);
-        assert(g.describeInitialState.toString == `{
-            "bombs": [],
-            "cells":[
-              {"q":0, "r":0, "color":1},
-              {"q":0, "r":1, "color":2}
-            ],
-            "characters":[
-              {"id":0, "color":1, "q":0, "r":0, "alive":true},
-              {"id":1, "color":2, "q":0, "r":1, "alive":true}
-            ]
-          }`.parseJSON.toString);
-    }
-
     /// Generate a JSON description of the current game state
     JSONValue describeState() const
     out(r)

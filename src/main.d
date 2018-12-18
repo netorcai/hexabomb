@@ -96,7 +96,7 @@ void doGame(in string mapFilename, in string hostname, in ushort port)
 
     game.initializeGame(doInit.nbPlayers);
     JSONValue doInitAck = `{}`.parseJSON;
-    doInitAck["all_clients"] = game.describeInitialState;
+    doInitAck["all_clients"] = game.describeState;
     c.sendDoInitAck(doInitAck);
 
     foreach (turn; 0..doInit.nbTurnsMax)
