@@ -13,6 +13,12 @@ following.
 `Unreleased`_
 -------------
 
+Changed game rules
+~~~~~~~~~~~~~~~~~~
+
+- Walls have been removed, as they were equivalent to an absence of cell.
+  There is now only one type of cell.
+
 0.1.0 - 2018-10-30
 ------------------
 
