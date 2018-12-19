@@ -62,16 +62,18 @@ Cells can be colored by a bomb if they are in the bomb's explosion range.
    :scale: 100 %
    :alt: figuration of cell types
 
-Turns and actions
------------------
+Turns
+-----
 The game is turn based. All players can do actions on each turn.
-All players should follow the following behaviour.
+All players should respect the following behaviour.
 
 1. Wait for a new turn to start.
 2. Receive a new turn (up-to-date board information) from the network.
 3. Decide what to do.
 4. Send the actions on the network. Start again (goto step 1).
 
+Actions
+-------
 On each turn each character can either move or drop a bomb.
 The exhaustive list of what each character can do is the following.
 
@@ -81,7 +83,7 @@ The exhaustive list of what each character can do is the following.
 - **bomb**: Drop a bomb in the character current cell.
   The character must be alive and its cell must NOT contain a bomb.
 - **revive**: Revive a dead character on a given cell.
-  The character must be dead. The target cell must exist and be empty.
+  The character must have been dead for at least 3 turns. The target cell must exist and be empty.
 
 hexabomb will apply the players' decisions in best effort.
 In case of conflicts, the faster player is priority.
@@ -143,7 +145,7 @@ This is how the color of such a cell is computed.
 
 1. If the cell is strictly closer to one bomb than the others, the cell is colored by the color of the closest bomb.
 2. If all the bombs of the set of the closest bombs to that cell have the same color, the cell is colored by the color of the bombs.
-3. Otherwise (e.g., if any two bombs of the set of the closest bombs to that cell have different colors), the cell color is turned to neutral.
+3. Otherwise (i.e., if any two bombs of the set of the closest bombs to that cell have different colors), the cell color is turned to neutral.
 
 Simultaneous explosions are figured just below.
 In this example, all the bombs have a range of 3 cells.
@@ -177,8 +179,12 @@ see `Simultaneous explosions`_ to understand how the cells of the explosion area
 .. _breadth-first search: https://en.wikipedia.org/wiki/Breadth-first_search
 
 Characters life and death
-~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------
 
-.. todo::
+Characters can die because of Bombs_.
 
-  Write life and death description.
+A dead character is removed from the board — thus making the character's cell traversable.
+
+A character death does not imply any direct score penalty on the dead character's player.
+However an indirect penalty still exists, as a dead character cannot do any action for at least 3 turns.
+After these 3 turns, the character can be revived via a *revive* action (see Actions_).
