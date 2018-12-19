@@ -1,0 +1,12 @@
+{
+    "name": "random",
+    "authors": [ "Millian Poquet" ],
+    "description": "Random bot for hexabomb",
+    "copyright": "Copyright © 2018, Millian Poquet",
+    "license": "public domain",
+    "targetType": "executable",
+
+    "dependencies": {
+        "netorcai-client": "~>1.0.0"
+    }
+}
