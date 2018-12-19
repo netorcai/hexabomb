@@ -21,6 +21,7 @@ struct Character
     immutable uint id;
     immutable uint color;
     bool alive = true;
+    int reviveDelay = -1;
     Position pos;
 }
 
@@ -372,6 +373,7 @@ class Game
             cValue.object["q"] = c.pos.q;
             cValue.object["r"] = c.pos.r;
             cValue.object["alive"] = c.alive;
+            cValue.object["revive_delay"] = c.reviveDelay;
 
             v.array ~= cValue;
         }
@@ -466,8 +468,8 @@ class Game
               {"q":0, "r":2, "color":0}
             ],
             "characters":[
-              {"id":0, "color":1, "q":0, "r":0, "alive":true},
-              {"id":1, "color":2, "q":0, "r":1, "alive":true}
+              {"id":0, "color":1, "q":0, "r":0, "alive":true, "revive_delay":-1},
+              {"id":1, "color":2, "q":0, "r":1, "alive":true, "revive_delay":-1}
             ],
             "score":{
               "0": 0,
@@ -487,6 +489,9 @@ class Game
 
         // Update the game state (apply the players' actions)
         applyPlayersActions(playerActions);
+
+        // Manage dead characters: reduce delays.
+        doDeadCharacterTurn;
 
         // Manage bombs: reduce delays, compute explosions...
         doBombTurn;
@@ -612,6 +617,7 @@ class Game
         assertNotThrown(g.doTurn(doTurnMsg, currentWinnerPlayerID, gameState));
         assert(g._characters[0].pos == Position( 1, 1)); // Moved
         assert(g._characters[0].alive == false); // Died
+        assert(g._characters[0].reviveDelay == 3); // Died
         assert(g._characters[1].pos == Position( 2, 0)); // Moved
         assert(g._characters[1].alive == true);
 
@@ -637,27 +643,65 @@ class Game
         assert(gameState["score"]["0"].getInt == 22);
         assert(gameState["score"]["1"].getInt == 9);
 
+        // Nothing happens during some turns — just waiting for character 0 to be revivable.
+        doTurnMsg = nm.parseDoTurnMessage(`{
+          "message_type": "DO_TURN",
+          "player_actions": [
+            {"player_id": 0, "turn_number": 7, "actions":[]},
+            {"player_id": 1, "turn_number": 7, "actions":[]}
+          ]
+        }`.parseJSON);
+        assertNotThrown(g.doTurn(doTurnMsg, currentWinnerPlayerID, gameState));
+        assert(g._characters[0].reviveDelay == 2);
+        assert(gameState["score"]["0"].getInt == 35);
+        assert(gameState["score"]["1"].getInt == 10);
+
+        doTurnMsg = nm.parseDoTurnMessage(`{
+          "message_type": "DO_TURN",
+          "player_actions": [
+            {"player_id": 0, "turn_number": 8, "actions":[]},
+            {"player_id": 1, "turn_number": 8, "actions":[]}
+          ]
+        }`.parseJSON);
+        assertNotThrown(g.doTurn(doTurnMsg, currentWinnerPlayerID, gameState));
+        assert(g._characters[0].reviveDelay == 1);
+        assert(gameState["score"]["0"].getInt == 48);
+        assert(gameState["score"]["1"].getInt == 11);
+
+        doTurnMsg = nm.parseDoTurnMessage(`{
+          "message_type": "DO_TURN",
+          "player_actions": [
+            {"player_id": 0, "turn_number": 9, "actions":[]},
+            {"player_id": 1, "turn_number": 9, "actions":[]}
+          ]
+        }`.parseJSON);
+        assertNotThrown(g.doTurn(doTurnMsg, currentWinnerPlayerID, gameState));
+        assert(g._characters[0].reviveDelay == 0);
+        assert(gameState["score"]["0"].getInt == 61);
+        assert(gameState["score"]["1"].getInt == 12);
+
         // Revive and move.
         // - char0 tries to revive at char1's position. char1 must first move to enable this.
         // - char1 just moves.
         doTurnMsg = nm.parseDoTurnMessage(`{
           "message_type": "DO_TURN",
           "player_actions": [
-            {"player_id": 0, "turn_number": 6, "actions":[{"id":0, "movement":"revive", "revive_q": 2, "revive_r":0}]},
-            {"player_id": 1, "turn_number": 6, "actions":[{"id":1, "movement":"move", "direction":"z+"}]}
+            {"player_id": 0, "turn_number": 10, "actions":[{"id":0, "movement":"revive", "revive_q": 2, "revive_r":0}]},
+            {"player_id": 1, "turn_number": 10, "actions":[{"id":1, "movement":"move", "direction":"z+"}]}
           ]
         }`.parseJSON);
         assertNotThrown(g.doTurn(doTurnMsg, currentWinnerPlayerID, gameState));
         assert(g._characters[0].pos == Position( 2, 0)); // Moved
         assert(g._characters[0].alive == true); // Revived
+        assert(g._characters[0].reviveDelay == -1); // Revived
         assert(g._characters[1].pos == Position( 2,-1)); // Moved
         assert(g._characters[1].alive == true);
         assert(g._board.cellAt(Position( 2, 0)).color == 1);
         assert(g._board.cellAt(Position( 2,-1)).color == 2);
         assert(gameState["cell_count"]["0"].getInt == 13);
         assert(gameState["cell_count"]["1"].getInt == 1);
-        assert(gameState["score"]["0"].getInt == 35);
-        assert(gameState["score"]["1"].getInt == 10);
+        assert(gameState["score"]["0"].getInt == 74);
+        assert(gameState["score"]["1"].getInt == 13);
     }
 
     private int determineCurrentWinnerPlayerID()
@@ -754,6 +798,8 @@ class Game
             case CharacterMovement.revive:
                 enforce(c.alive == false,
                     format!"Character id=%s cannot be revived (already alive)"(c.id));
+                enforce(c.reviveDelay == 0,
+                    format!"Character id=%s cannot be revived (revive delay is %s)"(c.id, c.reviveDelay));
 
                 auto cell = _board.cellAtOrNull(action.revivePosition);
                 enforce(cell !is null,
@@ -767,6 +813,7 @@ class Game
 
                 // Everything seems fine. We can revive the player.
                 c.alive = true;
+                c.reviveDelay = -1;
                 c.pos = action.revivePosition;
                 cell.addCharacter(c.color);
                 return true;
@@ -844,9 +891,15 @@ class Game
         assertThrown(g.applyAction(a, 1));
         assert(collectExceptionMsg(g.applyAction(a, 1)) ==
             `Character id=0 cannot be revived (already alive)`);
-        // Invalid revive position (cell does not exist)
+        // Revive delay has not been reached
         g._board.cellAt(c.pos).removeCharacter;
         c.alive = false;
+        c.reviveDelay = 1;
+        assertThrown(g.applyAction(a, 1));
+        assert(collectExceptionMsg(g.applyAction(a, 1)) ==
+            `Character id=0 cannot be revived (revive delay is 1)`);
+        // Invalid revive position (cell does not exist)
+        c.reviveDelay = 0;
         a.revivePosition = Position(42,42);
         assertThrown(g.applyAction(a, 1));
         assert(collectExceptionMsg(g.applyAction(a, 1)) ==
@@ -983,7 +1036,11 @@ class Game
 
         // Kill characters on exploded cells.
         auto killedCharacters = _characters.filter!(c => c.pos in boardAlterations);
-        killedCharacters.each!((ref c) => c.alive = false);
+        foreach (ref c; killedCharacters)
+        {
+            c.alive = false;
+            c.reviveDelay = 3;
+        }
 
         // Remove exploded bombs.
         _bombs = _bombs.remove!(b => b.position in explodedBombs);
@@ -1027,7 +1084,10 @@ class Game
             previous._board.cellAt(pos).explode(bombColor);
 
         foreach (ref c; previous._characters)
+        {
             c.alive = false;
+            c.reviveDelay = 3;
+        }
         assert(g == previous);
 
         // Third turn (no bombs: nothing happens)
@@ -1079,7 +1139,11 @@ class Game
         // First turn (central bomb explode -> all bombs explode)
         g.doBombTurn;
         previous._bombs = [];
-        previous._characters.each!((ref c) => c.alive = false);
+        foreach (ref c; previous._characters)
+        {
+            c.alive = false;
+            c.reviveDelay = 3;
+        }
 
         uint[Position] colorAlterations = [
             // Newly central (50)
@@ -1164,6 +1228,7 @@ class Game
         previous._bombs = bombs[1..$];
         previous._bombs[0].delay = 1;
         previous._characters[0].alive = false;
+        previous._characters[0].reviveDelay = 3;
         assert(g == previous);
 
         // Second turn. Bomb explodes alone (recovers all cells, kills c2)
@@ -1176,11 +1241,54 @@ class Game
         }
         previous._bombs = [];
         previous._characters[1].alive = false;
+        previous._characters[1].reviveDelay = 3;
         assert(g == previous);
 
         // Third turn. Does nothing.
         g.doBombTurn;
         assert(g == previous);
+    }
+
+    // Reduce the revive delay of dead characters.
+    private void doDeadCharacterTurn()
+    {
+        auto deadCharacters = _characters.filter!(c => c.alive == false);
+        deadCharacters.each!((ref c) => c.reviveDelay = max(0, c.reviveDelay - 1));
+    }
+    unittest
+    {
+        auto g = generateBasicGame;
+
+        // Initial state.
+        assert(g._characters[0].alive == true);
+        assert(g._characters[0].reviveDelay == -1);
+        assert(g._characters[1].alive == true);
+        assert(g._characters[1].reviveDelay == -1);
+
+        // Kill character 0.
+        g._characters[0].alive = false;
+        g._characters[0].reviveDelay = 2;
+
+        // Turn 1.
+        g.doDeadCharacterTurn;
+        assert(g._characters[0].alive == false);
+        assert(g._characters[0].reviveDelay == 1);
+        assert(g._characters[1].alive == true);
+        assert(g._characters[1].reviveDelay == -1);
+
+        // Turn 2.
+        g.doDeadCharacterTurn;
+        assert(g._characters[0].alive == false);
+        assert(g._characters[0].reviveDelay == 0);
+        assert(g._characters[1].alive == true);
+        assert(g._characters[1].reviveDelay == -1);
+
+        // Turn 3.
+        g.doDeadCharacterTurn;
+        assert(g._characters[0].alive == false);
+        assert(g._characters[0].reviveDelay == 0);
+        assert(g._characters[1].alive == true);
+        assert(g._characters[1].reviveDelay == -1);
     }
 
     override bool opEquals(const Object o) const
@@ -1220,11 +1328,11 @@ class Game
         assert(g.toString == `{bombs=[], characters=[], initialPositions=[0:[{q=0,r=0}], 1:[{q=0,r=1}]], board={cells:[{q=0,r=0}:{color=0}, {q=0,r=1}:{color=0}], neighbors:[{q=0,r=0}:[{q=0,r=1}], {q=0,r=1}:[{q=0,r=0}]]}}`);
 
         g.placeInitialCharacters(2);
-        assert(g.toString == `{bombs=[], characters=[Character(0, 1, true, {q=0,r=0}), Character(1, 2, true, {q=0,r=1})], initialPositions=[0:[{q=0,r=0}], 1:[{q=0,r=1}]], board={cells:[{q=0,r=0}:{color=1,char}, {q=0,r=1}:{color=2,char}], neighbors:[{q=0,r=0}:[{q=0,r=1}], {q=0,r=1}:[{q=0,r=0}]]}}`);
+        assert(g.toString == `{bombs=[], characters=[Character(0, 1, true, -1, {q=0,r=0}), Character(1, 2, true, -1, {q=0,r=1})], initialPositions=[0:[{q=0,r=0}], 1:[{q=0,r=1}]], board={cells:[{q=0,r=0}:{color=1,char}, {q=0,r=1}:{color=2,char}], neighbors:[{q=0,r=0}:[{q=0,r=1}], {q=0,r=1}:[{q=0,r=0}]]}}`);
 
         g._bombs = [Bomb(Position(0,0), 1, 1, 1)];
         g._board.cellAt(Position(0,0)).addBomb;
-        assert(g.toString == `{bombs=[Bomb({q=0,r=0}, 1, 1, 1)], characters=[Character(0, 1, true, {q=0,r=0}), Character(1, 2, true, {q=0,r=1})], initialPositions=[0:[{q=0,r=0}], 1:[{q=0,r=1}]], board={cells:[{q=0,r=0}:{color=1,char,bomb}, {q=0,r=1}:{color=2,char}], neighbors:[{q=0,r=0}:[{q=0,r=1}], {q=0,r=1}:[{q=0,r=0}]]}}`);
+        assert(g.toString == `{bombs=[Bomb({q=0,r=0}, 1, 1, 1)], characters=[Character(0, 1, true, -1, {q=0,r=0}), Character(1, 2, true, -1, {q=0,r=1})], initialPositions=[0:[{q=0,r=0}], 1:[{q=0,r=1}]], board={cells:[{q=0,r=0}:{color=1,char,bomb}, {q=0,r=1}:{color=2,char}], neighbors:[{q=0,r=0}:[{q=0,r=1}], {q=0,r=1}:[{q=0,r=0}]]}}`);
     }
 }
 
