@@ -16,8 +16,8 @@ following.
 Changed game rules
 ~~~~~~~~~~~~~~~~~~
 
+- Characters can no longer be revived right away after being killed.
 - Walls have been removed, as they were equivalent to an absence of cell.
-  There is now only one type of cell.
 - The game state format is now the same in `DO_INIT_ACK` and `DO_TURN_ACK`.
 
 0.1.0 - 2018-10-30
