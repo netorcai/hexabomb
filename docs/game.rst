@@ -124,7 +124,8 @@ The animation below shows a simple game scenario involving a bomb.
 
 1. On first turn, Green drops a bomb (delay=3, range=2).
 2. On second and third turns, Green moves away from the explosion area.
-3. During fourth turn, the bomb explodes as its delay reaches 0.
+3. Green does no action during fourth turn.
+   At the end of the turn, the bomb explodes as its delay reaches 0.
    The explosion area is highlighted in orange.
    At the end of the fourth turn, all the cells of the explosion range have been colored in green.
    Blue is killed in the process as it was in the explosion area.

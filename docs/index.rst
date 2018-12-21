@@ -13,4 +13,5 @@ Welcome to hexabomb's documentation!
    install
    game
    details
+   clients
    changelog
