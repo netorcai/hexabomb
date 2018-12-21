@@ -8,11 +8,12 @@ Most of the programs and libraries are available in the package registers of
 the languages they are written in.
 For more convenience, most of the tools are also packaged in the netorcaipkgs_
 Nix_ repository, which allows to install all of them with the same interface.
-The concerned packages are the following.
+The concerned software is the following.
 
 - hexabomb, the game itself.
 - netorcai, the network orchestrator. **Required to host a game**.
 - netorcai client libraries. **Required to run bots that play the game**.
+- hexabomb-visu, a visualization client. **Required to visualize games**.
 
 From nix
 --------
