@@ -5,6 +5,7 @@ project('random', 'cpp',
 
 netorcai_client_cpp_dep = dependency('netorcai-client-cpp')
 threads_dep = dependency('threads', required: true)
+boost_dep = dependency('boost', required: true)
 
 src = [
     'hexabomb-parse.cpp',
@@ -13,6 +14,6 @@ src = [
 ]
 
 player = executable('random', src,
-    dependencies: [netorcai_client_cpp_dep, threads_dep],
+    dependencies: [netorcai_client_cpp_dep, threads_dep, boost_dep],
     install: true
 )
