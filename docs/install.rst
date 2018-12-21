@@ -1,3 +1,5 @@
+.. _installation:
+
 Installation
 ============
 
@@ -34,6 +36,9 @@ Several installation command examples are given below.
 
     # only install the netorcai orchestrator
     nix-env -f https://github.com/netorcai/netorcaipkgs/archive/master.tar.gz -iA netorcai
+
+    # install the desired client libraries
+    nix-env -f https://github.com/netorcai/netorcaipkgs/archive/master.tar.gz -iA netorcai_client_cpp
 
 The programs should then be callable directly — e.g., :code:`netorcai --help`.
 
