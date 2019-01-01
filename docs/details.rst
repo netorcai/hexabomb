@@ -66,7 +66,7 @@ Feel free to read the actual implementation in `hexabomb applyPlayersActions fun
     Do
     |   For each player in order of actions reception
     |   |   For each action in player-specified order
-    |   |   |   Try to apply action if it has not been already applied succesfully
+    |   |   |   Try to apply action if it has not been already applied successfully
     While (game state has been modified)
 
 Game state
@@ -111,7 +111,7 @@ Game state example
 The following example shows a game state.
 
 - There are three cells. Two belongs to first player, the last belongs to the other player.
-- There are two characters. Only one of them is alive. The other cannot be revived right away, but it will be rivable next turn.
+- There are two characters. Only one of them is alive. The other cannot be revived right away, but it will be revivable next turn.
 - There is one bomb.
 
 .. code-block:: json
@@ -156,12 +156,12 @@ Once again, feel free to read `hexabomb's source code`_ in case of doubt.
 
 .. _JSON: https://www.json.org/index.html
 .. _netorcai: https://github.com/netorcai/netorcai/
-.. _netorcai metaprotocol: https://github.com/netorcai/netorcai/blob/master/doc/metaprotocol.md
-.. _DO_INIT_ACK: https://github.com/netorcai/netorcai/blob/master/doc/metaprotocol.md#do_init_ack
-.. _DO_TURN_ACK: https://github.com/netorcai/netorcai/blob/master/doc/metaprotocol.md#do_turn_ack
-.. _GAME_STARTS: https://github.com/netorcai/netorcai/blob/master/doc/metaprotocol.md#game_starts
-.. _GAME_ENDS: https://github.com/netorcai/netorcai/blob/master/doc/metaprotocol.md#game_ends
-.. _TURN: https://github.com/netorcai/netorcai/blob/master/doc/metaprotocol.md#turn
-.. _TURN_ACK: https://github.com/netorcai/netorcai/blob/master/doc/metaprotocol.md#turn_ack
+.. _netorcai metaprotocol: https://netorcai.readthedocs.io/en/latest/metaprotocol.html
+.. _DO_INIT_ACK: https://netorcai.readthedocs.io/en/latest/metaprotocol.html#do-init-ack
+.. _DO_TURN_ACK: https://netorcai.readthedocs.io/en/latest/metaprotocol.html#do-turn-ack
+.. _GAME_STARTS: https://netorcai.readthedocs.io/en/latest/metaprotocol.html#game-starts
+.. _GAME_ENDS: https://netorcai.readthedocs.io/en/latest/metaprotocol.html#game-ends
+.. _TURN: https://netorcai.readthedocs.io/en/latest/metaprotocol.html#turn
+.. _TURN_ACK: https://netorcai.readthedocs.io/en/latest/metaprotocol.html#turn-ack
 .. _hexabomb applyPlayersActions function: https://github.com/netorcai/hexabomb/blob/master/src/game.d#L747.
 .. _hexabomb's source code: https://github.com/netorcai/hexabomb/blob/master/src

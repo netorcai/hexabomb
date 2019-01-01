@@ -5,7 +5,7 @@ To avoid the need of implementing bots from scratch,
 naive bots implementations are provided in several languages.
 All the bots should be very similar in design.
 
-- Use the netorcai client library of the target language (see :ref:`installation`).
+- Use the netorcai client library of the target language (see `netorcai documentation`_).
 - Parse hexabomb game-dependent content in a dedicated *module*, and
   provide data structures corresponding to hexabomb entities (characters, bombs...).
 - Provide a basic *main* file that reads and sends valid netorcai messages,
@@ -16,3 +16,4 @@ The source code of each bot should be documented.
 Instructions for installation, execution and dependencies installation should be in the ``README`` of each bot.
 
 .. _hexabomb git repository: https://github.com/netorcai/hexabomb
+.. _netorcai documentation: https://netorcai.readthedocs.io/en/latest/clients.html
