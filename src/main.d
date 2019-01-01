@@ -81,7 +81,7 @@ void doGame(in string mapFilename, in string hostname, in ushort port)
     writeln("done");
 
 	auto c = new Client;
-    write("Connecting to netorcai... "); stdout.flush();
+    write(format!"Connecting to netorcai (%s:%s)... "(hostname, port)); stdout.flush();
     c.connect(hostname, port);
     writeln("done");
 
