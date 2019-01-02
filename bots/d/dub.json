@@ -7,6 +7,6 @@
     "targetType": "executable",
 
     "dependencies": {
-        "netorcai-client": "~>1.0.0"
+        "netorcai-client": "~>1.0.1"
     }
 }
