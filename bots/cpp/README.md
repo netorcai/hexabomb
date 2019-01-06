@@ -3,17 +3,27 @@
 Getting dependencies
 --------------------
 
-Here is the list of the bot dependencies:
-- [netorcai-client-cpp] and its dependencies ([nlohmann_json], [SFML]-network)
-- [Boost]
+First, install [Boost] and [SFML] from your distribution's package manager.
 
-Make sure [netorcai-client-cpp] and [nlohmann_json] can be found from [pkg-config].
+Then, install [netorcai-client-cpp] and its dependency ([nlohmann_json]) with
+the following script.
+
 ``` bash
-# This should return no error.
-pkg-config --cflags --libs netorcai-client-cpp
-```
+INSTALL_DIRECTORY=/usr
+# IMPORTANT NOTE: If you change the install directory,
+# make sure ${INSTALL_DIRECTORY}/lib/pkgconfig is in your pkg-config path
+# (environment variable $PKG_CONFIG_PATH)
 
-Make sure boost is installed in your system.
+# Get and install nlohmann_json-3.5.0
+git clone https://github.com/nlohmann/json.git -b v3.5.0 --single-branch --depth 1
+(cd json && meson build --prefix=${INSTALL_DIRECTORY})
+(cd json/build && ninja install)
+
+# Get and install netorcai-client-cpp
+git clone https://github.com/netorcai/netorcai-client-cpp.git
+(cd netorcai-client-cpp && meson build --prefix=${INSTALL_DIRECTORY})
+(cd netorcai-client-cpp/build && ninja install)
+```
 
 Build instructions
 ------------------
