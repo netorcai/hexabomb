@@ -20,6 +20,11 @@ Changed game rules
 - Walls have been removed, as they were equivalent to an absence of cell.
 - The game state format is now the same in ``DO_INIT_ACK`` and ``DO_TURN_ACK``.
 
+Fixed
+~~~~~
+
+- Only one character was allowed per player.
+
 0.1.0 - 2018-10-30
 ------------------
 
