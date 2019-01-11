@@ -318,7 +318,7 @@ class Game
     }
     out
     {
-        assert(_characters.length == nbPlayers);
+        assert(_characters.length % nbPlayers == 0);
         foreach(c; _characters)
             assert(_board.cellAt(c.pos).hasCharacter);
     }
