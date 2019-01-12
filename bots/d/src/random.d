@@ -41,7 +41,6 @@ void main()
             `{"id":ID, "movement":"bomb", "bomb_delay":3, "bomb_range":3}`,
             `{"id":ID, "movement":"revive"}`,
         ];
-        writeln("possibleActions:", possibleActions);
 
         write("Waiting for GAME_STARTS... "); stdout.flush();
         const auto gameStarts = c.readGameStarts();
