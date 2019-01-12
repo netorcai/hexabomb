@@ -59,8 +59,7 @@ struct CharacterActions
     // Move related
     Direction direction;
 
-    // Revive related
-    Position revivePosition;
+    // Revive related: Nothing
 
     // Bomb related
     uint bombRange;
@@ -85,8 +84,6 @@ struct CharacterActions
                 checkBombProperties(bombRange, bombDelay);
                 return;
             case CharacterMovement.revive:
-                revivePosition.q = v["revive_q"].getInt;
-                revivePosition.r = v["revive_r"].getInt;
                 return;
         }
     }
@@ -162,19 +159,7 @@ struct CharacterActions
 
         // Revive
         s = `{"id":0, "movement":"revive"}`;
-        assertThrown(CharacterActions(s.parseJSON));
-        assert(collectExceptionMsg(CharacterActions(s.parseJSON)) ==
-            "Key not found: revive_q");
-
-        s = `{"id":0, "movement":"revive", "revive_q":4}`;
-        assertThrown(CharacterActions(s.parseJSON));
-        assert(collectExceptionMsg(CharacterActions(s.parseJSON)) ==
-            "Key not found: revive_r");
-
-        s = `{"id":0, "movement":"revive", "revive_q":4, "revive_r":"meh"}`;
-        assertThrown(CharacterActions(s.parseJSON));
-        assert(collectExceptionMsg(CharacterActions(s.parseJSON)) ==
-            `Cannot read int value from JSONValue "meh"`);
+        assertNotThrown(CharacterActions(s.parseJSON));
     }
 }
 
