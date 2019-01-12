@@ -92,6 +92,7 @@ The game state is a JSON_ object with the following fields.
     - ``r`` (number): The :math:`r` axial coordinate of the cell the player is in.
     - ``alive`` (boolean): Whether the character is alive or not.
     - ``revive_delay`` (number): The number of turns before which the player can be revived. Dead characters can only be revived when it reaches 0. -1 for alive characters.
+    - ``bomb_count`` (number): The number of bombs the character holds. Either 0, 1 or 2. Increased by 1 every 10 turns (with a maximum of 2).
 
 - ``bombs``: An array of bombs. Each bomb is an object with the following fields.
 
@@ -147,6 +148,7 @@ Once again, feel free to read `hexabomb's source code`_ in case of doubt.
 
 #. Apply players actions (see `Application of actions`_)
 #. Reduce the revive delay of dead characters.
+#. Increase the bomb count of all characters (every 10 turns).
 #. Reduce bomb delays,
    explode those reaching a delay of 0,
    compute chain reactions then

@@ -82,6 +82,7 @@ The exhaustive list of what each character can do is the following.
   The character must be alive. The target cell must exist and be empty.
 - **bomb**: Drop a bomb in the character current cell.
   The character must be alive and its cell must NOT contain a bomb.
+  The character's bomb count must be 1 or greater.
 - **revive**: Revive a dead character on the cell where it died.
   The character must have been dead for at least 3 turns. The cell be empty.
 
@@ -134,6 +135,10 @@ The animation below shows a simple game scenario involving a bomb.
    :scale: 100 %
    :alt: figuration of a bomb lifecycle
 
+Each character has a bomb count, which is either 0, 1 or 2 (initially, it is 1).
+Dropping a bomb costs one bomb.
+The bomb count of every character is increased by 1 every 10 turns (but the bomb count cannot exceed 2).
+
 Simultaneous explosions
 ~~~~~~~~~~~~~~~~~~~~~~~
 Several bombs can explode at the same time.
@@ -185,6 +190,7 @@ Characters life and death
 Characters can die because of Bombs_.
 
 A dead character is removed from the board — thus making the character's cell traversable.
+Being dead or alive does not impact the bomb count of a character at all.
 
 A character death does not imply any direct score penalty on the dead character's player.
 However an indirect penalty still exists, as a dead character cannot do any action for at least 3 turns.

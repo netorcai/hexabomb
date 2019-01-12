@@ -23,6 +23,9 @@ Changed game rules
 - Characters can no longer be revived right away after being killed.
 - Characters can no longer be revived on a target cell —
   this is now only possible on the cell where they died.
+- Characters now have a bomb count (0, 1 or 2). Dropping a bomb costs one bomb.
+  The bomb count of all characters is increased by 1 every 10 turns (cannot exceed 2).
+  The bomb count initial value is 1.
 - Walls have been removed, as they were equivalent to an absence of cell.
 - The game state format is now the same in ``DO_INIT_ACK`` and ``DO_TURN_ACK``.
 
