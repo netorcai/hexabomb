@@ -525,7 +525,7 @@ class Board
           {"q": 3, "r":-3, "color": 0}
         ]`.parseJSON;
         Board b = new Board(boardDescription);
-        assert(b.toJSON == boardDescription);
+        assert(b.toJSON.toString == boardDescription.toString);
     }
 
     uint[uint] cellCountPerColor()
