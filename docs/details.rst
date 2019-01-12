@@ -30,8 +30,7 @@ Other fields are required depending on the desired ``movement``.
   Must either be ``x+``, ``y+``, ``z+``, ``x-``, ``y-``, or ``z-``.
 - ``bomb_range`` (number) and ``bomb_delay`` (number):
   The desired range and delay for ``bomb`` movements.
-- ``revive_q`` (number) and ``revive_r`` (number):
-  The desired revival coordinates for ``revival`` movements.
+- (No parameters are required for ``revive`` movements.)
 
 Actions examples
 ~~~~~~~~~~~~~~~~
@@ -41,14 +40,14 @@ The following example shows the actions taken by one player during one turn.
 - Character 0 wants to move one cell towards the :math:`x^+` direction.
 - Character 1 wants to drop a bomb on its current cell.
   The bomb should have a delay of 3 turns and a range of 3 cells.
-- Character 2 wants to revive on cell :math:`(q=0, r=0)`.
+- Character 2 wants to revive (on the cell where it died).
 
 .. code-block:: json
 
     [
         {"id":0, "movement":"move", "direction":"x+"},
         {"id":1, "movement":"bomb", "bomb_delay":3, "bomb_range":3},
-        {"id":2, "movement":"revive", "revive_q":0, "revive_r":0}
+        {"id":2, "movement":"revive"}
     ]
 
 Application of actions

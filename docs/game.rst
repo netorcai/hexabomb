@@ -82,8 +82,8 @@ The exhaustive list of what each character can do is the following.
   The character must be alive. The target cell must exist and be empty.
 - **bomb**: Drop a bomb in the character current cell.
   The character must be alive and its cell must NOT contain a bomb.
-- **revive**: Revive a dead character on a given cell.
-  The character must have been dead for at least 3 turns. The target cell must exist and be empty.
+- **revive**: Revive a dead character on the cell where it died.
+  The character must have been dead for at least 3 turns. The cell be empty.
 
 hexabomb will apply the players' decisions in best effort.
 In case of conflicts, the faster player is priority.

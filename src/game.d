@@ -643,18 +643,22 @@ class Game
         assert(gameState["score"]["0"].getInt == 22);
         assert(gameState["score"]["1"].getInt == 9);
 
-        // Nothing happens during some turns — just waiting for character 0 to be revivable.
+        // char1 just moves to char0's position then stops — just waiting for char0 to be revivable.
         doTurnMsg = nm.parseDoTurnMessage(`{
           "message_type": "DO_TURN",
           "player_actions": [
             {"player_id": 0, "turn_number": 7, "actions":[]},
-            {"player_id": 1, "turn_number": 7, "actions":[]}
+            {"player_id": 1, "turn_number": 7, "actions":[{"id":1, "movement":"move", "direction":"y-"}]}
           ]
         }`.parseJSON);
         assertNotThrown(g.doTurn(doTurnMsg, currentWinnerPlayerID, gameState));
         assert(g._characters[0].reviveDelay == 2);
-        assert(gameState["score"]["0"].getInt == 35);
-        assert(gameState["score"]["1"].getInt == 10);
+        assert(g._characters[1].pos == Position( 1, 1)); // Moved
+        assert(g._characters[1].pos == g._characters[0].pos);
+        assert(gameState["cell_count"]["0"].getInt == 12);
+        assert(gameState["cell_count"]["1"].getInt == 2);
+        assert(gameState["score"]["0"].getInt == 34);
+        assert(gameState["score"]["1"].getInt == 11);
 
         doTurnMsg = nm.parseDoTurnMessage(`{
           "message_type": "DO_TURN",
@@ -665,8 +669,8 @@ class Game
         }`.parseJSON);
         assertNotThrown(g.doTurn(doTurnMsg, currentWinnerPlayerID, gameState));
         assert(g._characters[0].reviveDelay == 1);
-        assert(gameState["score"]["0"].getInt == 48);
-        assert(gameState["score"]["1"].getInt == 11);
+        assert(gameState["score"]["0"].getInt == 46);
+        assert(gameState["score"]["1"].getInt == 13);
 
         doTurnMsg = nm.parseDoTurnMessage(`{
           "message_type": "DO_TURN",
@@ -677,31 +681,31 @@ class Game
         }`.parseJSON);
         assertNotThrown(g.doTurn(doTurnMsg, currentWinnerPlayerID, gameState));
         assert(g._characters[0].reviveDelay == 0);
-        assert(gameState["score"]["0"].getInt == 61);
-        assert(gameState["score"]["1"].getInt == 12);
+        assert(gameState["score"]["0"].getInt == 58);
+        assert(gameState["score"]["1"].getInt == 15);
 
         // Revive and move.
-        // - char0 tries to revive at char1's position. char1 must first move to enable this.
+        // - char0 tries to revive. char1 must first move to enable this.
         // - char1 just moves.
         doTurnMsg = nm.parseDoTurnMessage(`{
           "message_type": "DO_TURN",
           "player_actions": [
-            {"player_id": 0, "turn_number": 10, "actions":[{"id":0, "movement":"revive", "revive_q": 2, "revive_r":0}]},
-            {"player_id": 1, "turn_number": 10, "actions":[{"id":1, "movement":"move", "direction":"z+"}]}
+            {"player_id": 0, "turn_number": 10, "actions":[{"id":0, "movement":"revive"}]},
+            {"player_id": 1, "turn_number": 10, "actions":[{"id":1, "movement":"move", "direction":"y+"}]}
           ]
         }`.parseJSON);
         assertNotThrown(g.doTurn(doTurnMsg, currentWinnerPlayerID, gameState));
-        assert(g._characters[0].pos == Position( 2, 0)); // Moved
+        assert(g._characters[0].pos == Position( 1, 1)); // Did not moved
         assert(g._characters[0].alive == true); // Revived
         assert(g._characters[0].reviveDelay == -1); // Revived
-        assert(g._characters[1].pos == Position( 2,-1)); // Moved
+        assert(g._characters[1].pos == Position( 2, 0)); // Moved
         assert(g._characters[1].alive == true);
-        assert(g._board.cellAt(Position( 2, 0)).color == 1);
-        assert(g._board.cellAt(Position( 2,-1)).color == 2);
+        assert(g._board.cellAt(Position( 1, 1)).color == 1);
+        assert(g._board.cellAt(Position( 2, 0)).color == 2);
         assert(gameState["cell_count"]["0"].getInt == 13);
         assert(gameState["cell_count"]["1"].getInt == 1);
-        assert(gameState["score"]["0"].getInt == 74);
-        assert(gameState["score"]["1"].getInt == 13);
+        assert(gameState["score"]["0"].getInt == 71);
+        assert(gameState["score"]["1"].getInt == 16);
     }
 
     private int determineCurrentWinnerPlayerID()
@@ -801,9 +805,8 @@ class Game
                 enforce(c.reviveDelay == 0,
                     format!"Character id=%s cannot be revived (revive delay is %s)"(c.id, c.reviveDelay));
 
-                auto cell = _board.cellAtOrNull(action.revivePosition);
-                enforce(cell !is null,
-                    format!"Character id=%s cannot be revived (no cell at %s)"(c.id, action.revivePosition));
+                auto cell = _board.cellAtOrNull(c.pos);
+                assert(cell !is null);
 
                 // Not traversable because of a bomb or a player.
                 // This may be invalid because of recent actions from other players.
@@ -814,7 +817,6 @@ class Game
                 // Everything seems fine. We can revive the player.
                 c.alive = true;
                 c.reviveDelay = -1;
-                c.pos = action.revivePosition;
                 cell.addCharacter(c.color);
                 return true;
 
@@ -898,17 +900,12 @@ class Game
         assertThrown(g.applyAction(a, 1));
         assert(collectExceptionMsg(g.applyAction(a, 1)) ==
             `Character id=0 cannot be revived (revive delay is 1)`);
-        // Invalid revive position (cell does not exist)
+        // Bad revive position (character on cell)
         c.reviveDelay = 0;
-        a.revivePosition = Position(42,42);
-        assertThrown(g.applyAction(a, 1));
-        assert(collectExceptionMsg(g.applyAction(a, 1)) ==
-            `Character id=0 cannot be revived (no cell at {q=42,r=42})`);
-        // Bad revive position (cell is a character)
-        a.revivePosition = Position(0,1);
+        c.pos = Position(0,1);
         assert(g.applyAction(a, 1) == false);
-        // Bad revive position (cell is a bomb)
-        a.revivePosition = Position(1,-3);
+        // Bad revive position (bomb on cell)
+        c.pos = Position(1,-3);
         assert(g.applyAction(a, 1) == false);
 
         //////////
@@ -920,8 +917,8 @@ class Game
         assert(collectExceptionMsg(g.applyAction(a, 1)) ==
             `Character id=0 cannot be moved (not alive)`);
         // Revive the character
+        c.pos = Position(2,-3);
         a.movement = CharacterMovement.revive;
-        a.revivePosition = Position(2,-3);
         assert(g.applyAction(a, 1) == true);
         // Out of bounds
         a.movement = CharacterMovement.move;

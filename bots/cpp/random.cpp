@@ -52,7 +52,7 @@ int main()
             R"({"id":ID, "movement":"move", "direction":"y-"})",
             R"({"id":ID, "movement":"move", "direction":"z-"})",
             R"({"id":ID, "movement":"bomb", "bomb_delay":3, "bomb_range":3})",
-            R"({"id":ID, "movement":"revive", "revive_q":0, "revive_r":0})",
+            R"({"id":ID, "movement":"revive"})",
         };
 
         for (int i = 1; i < gameStarts.nbTurnsMax; i++)
