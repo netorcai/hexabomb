@@ -22,6 +22,7 @@ struct Character
     immutable uint color;
     bool alive = true;
     int reviveDelay = -1;
+    int bombCount = 1;
     Position pos;
 }
 
@@ -33,6 +34,7 @@ class Game
         Bomb[] _bombs;
         Character[] _characters;
 
+        uint _turnNumber = 0; // The turn number.
         uint _nbPlayers; /// The number of players in the game. 0 before init, then set to the right value
         uint[uint] _cellCount; /// The current number of cells of each player
         uint[uint] _score; /// The score of each player
@@ -374,6 +376,7 @@ class Game
             cValue.object["r"] = c.pos.r;
             cValue.object["alive"] = c.alive;
             cValue.object["revive_delay"] = c.reviveDelay;
+            cValue.object["bomb_count"] = c.bombCount;
 
             v.array ~= cValue;
         }
@@ -468,8 +471,8 @@ class Game
               {"q":0, "r":2, "color":0}
             ],
             "characters":[
-              {"id":0, "color":1, "q":0, "r":0, "alive":true, "revive_delay":-1},
-              {"id":1, "color":2, "q":0, "r":1, "alive":true, "revive_delay":-1}
+              {"id":0, "color":1, "q":0, "r":0, "alive":true, "revive_delay":-1, "bomb_count": 1},
+              {"id":1, "color":2, "q":0, "r":1, "alive":true, "revive_delay":-1, "bomb_count": 1}
             ],
             "score":{
               "0": 0,
@@ -484,6 +487,8 @@ class Game
 
     void doTurn(in nm.DoTurnMessage msg, out int currentWinnerPlayerID, out JSONValue gameState)
     {
+        _turnNumber += 1;
+
         // Retrieve the players actions as the Game understands it
         PlayerActions[] playerActions = msg.playerActions.map!(npa => PlayerActions(npa.playerID + 1, npa.actions)).array;
 
@@ -492,6 +497,9 @@ class Game
 
         // Manage dead characters: reduce delays.
         doDeadCharacterTurn;
+
+        // Increase the bombCount of characters?
+        updateCharactersBombCount;
 
         // Manage bombs: reduce delays, compute explosions...
         doBombTurn;
@@ -574,7 +582,9 @@ class Game
         }`.parseJSON);
         assertNotThrown(g.doTurn(doTurnMsg, currentWinnerPlayerID, gameState));
         assert(g._characters[0].pos == Position(0,1)); // Did not move
+        assert(g._characters[0].bombCount == 0); // Decreased
         assert(g._characters[1].pos == Position(1,1)); // Move failed
+        assert(g._characters[1].bombCount == 1); // Remained the same
         assert(g._board.cellAt(Position(0,1)).hasBomb == true); // Bomb succeeded
         assert(g._board.cellAt(Position(1,1)).hasBomb == false);
         assert(g._board.cellAt(Position(0,1)).color == 1);
@@ -680,7 +690,9 @@ class Game
           ]
         }`.parseJSON);
         assertNotThrown(g.doTurn(doTurnMsg, currentWinnerPlayerID, gameState));
+        assert(g._characters[0].bombCount == 0); // Still the same
         assert(g._characters[0].reviveDelay == 0);
+        assert(g._characters[1].bombCount == 1); // Still the same
         assert(gameState["score"]["0"].getInt == 58);
         assert(gameState["score"]["1"].getInt == 15);
 
@@ -695,17 +707,44 @@ class Game
           ]
         }`.parseJSON);
         assertNotThrown(g.doTurn(doTurnMsg, currentWinnerPlayerID, gameState));
+        assert(g._turnNumber == 10);
         assert(g._characters[0].pos == Position( 1, 1)); // Did not moved
         assert(g._characters[0].alive == true); // Revived
         assert(g._characters[0].reviveDelay == -1); // Revived
+        assert(g._characters[0].bombCount == 1); // Increased
         assert(g._characters[1].pos == Position( 2, 0)); // Moved
         assert(g._characters[1].alive == true);
+        assert(g._characters[1].bombCount == 2); // Increased
         assert(g._board.cellAt(Position( 1, 1)).color == 1);
         assert(g._board.cellAt(Position( 2, 0)).color == 2);
         assert(gameState["cell_count"]["0"].getInt == 13);
         assert(gameState["cell_count"]["1"].getInt == 1);
         assert(gameState["score"]["0"].getInt == 71);
         assert(gameState["score"]["1"].getInt == 16);
+
+        // Do nothing for 9 turns. Bomb count should remain the same.
+        foreach(i; 1 .. 10)
+        {
+            doTurnMsg = nm.parseDoTurnMessage(`{
+              "message_type": "DO_TURN",
+              "player_actions": []
+            }`.parseJSON);
+            assertNotThrown(g.doTurn(doTurnMsg, currentWinnerPlayerID, gameState));
+
+            assert(g._characters[0].bombCount == 1);
+            assert(g._characters[1].bombCount == 2);
+        }
+
+        // The bomb count is increased next turn. But char1 already has 2 bombs.
+        doTurnMsg = nm.parseDoTurnMessage(`{
+          "message_type": "DO_TURN",
+          "player_actions": []
+        }`.parseJSON);
+        assertNotThrown(g.doTurn(doTurnMsg, currentWinnerPlayerID, gameState));
+
+        assert(g._turnNumber == 20);
+        assert(g._characters[0].bombCount == 2); // Increased
+        assert(g._characters[1].bombCount == 2);
     }
 
     private int determineCurrentWinnerPlayerID()
@@ -845,6 +884,9 @@ class Game
                 enforce(c.alive == true,
                     format!"Character id=%s cannot spawn a bomb (not alive)"(c.id));
 
+                enforce(c.bombCount > 0,
+                    format!"Character id=%s cannot spawn a bomb (does not have any bomb)"(c.id));
+
                 auto cell = _board.cellAt(c.pos);
                 enforce(!cell.hasBomb,
                     format!"Character id=%s cannot spawn a bomb (cell is already bombed)"(c.id));
@@ -856,6 +898,7 @@ class Game
                    is seen with a delay=2 the first turn the bomb appears
                    (otherwise, would appear with delay=1)
                 +/
+                c.bombCount -= 1;
                 cell.addBomb;
                 _bombs ~= Bomb(c.pos, c.color, action.bombRange, action.bombDelay + 1);
                 return true;
@@ -946,7 +989,12 @@ class Game
         a.bombDelay = 1;
         // OK
         assert(g.applyAction(a, 1) == true);
+        // No bomb left
+        assertThrown(g.applyAction(a, 1));
+        assert(collectExceptionMsg(g.applyAction(a, 1)) ==
+            `Character id=0 cannot spawn a bomb (does not have any bomb)`);
         // Onto a bomb
+        g._characters[0].bombCount = 1;
         assertThrown(g.applyAction(a, 1));
         assert(collectExceptionMsg(g.applyAction(a, 1)) ==
             `Character id=0 cannot spawn a bomb (cell is already bombed)`);
@@ -1288,6 +1336,47 @@ class Game
         assert(g._characters[1].reviveDelay == -1);
     }
 
+    // Increase the bomb count of characters every 10 turns (max bombCount : 2)
+    private void updateCharactersBombCount()
+    {
+        if (_turnNumber % 10 == 0)
+        {
+            _characters.each!((ref c) => c.bombCount = min(2, c.bombCount + 1));
+        }
+    }
+    unittest
+    {
+        auto g = generateBasicGame;
+
+        // Initial state.
+        assert(g._characters[0].bombCount == 1);
+        assert(g._characters[1].bombCount == 1);
+
+        // Should not change during 9 turns.
+        foreach(i; 1 .. 10)
+        {
+            g._turnNumber += 1;
+            g.updateCharactersBombCount;
+            assert(g._characters[0].bombCount == 1);
+            assert(g._characters[1].bombCount == 1);
+        }
+
+        // 10th turn should increase the bomb count.
+        g._turnNumber += 1;
+        g.updateCharactersBombCount;
+        assert(g._characters[0].bombCount == 2);
+        assert(g._characters[1].bombCount == 2);
+
+        // Should not change now
+        foreach(i; 0..100)
+        {
+            g._turnNumber += 1;
+            g.updateCharactersBombCount;
+            assert(g._characters[0].bombCount == 2);
+            assert(g._characters[1].bombCount == 2);
+        }
+    }
+
     override bool opEquals(const Object o) const
     {
         auto g = cast(const Game) o;
@@ -1325,11 +1414,11 @@ class Game
         assert(g.toString == `{bombs=[], characters=[], initialPositions=[0:[{q=0,r=0}], 1:[{q=0,r=1}]], board={cells:[{q=0,r=0}:{color=0}, {q=0,r=1}:{color=0}], neighbors:[{q=0,r=0}:[{q=0,r=1}], {q=0,r=1}:[{q=0,r=0}]]}}`);
 
         g.placeInitialCharacters(2);
-        assert(g.toString == `{bombs=[], characters=[Character(0, 1, true, -1, {q=0,r=0}), Character(1, 2, true, -1, {q=0,r=1})], initialPositions=[0:[{q=0,r=0}], 1:[{q=0,r=1}]], board={cells:[{q=0,r=0}:{color=1,char}, {q=0,r=1}:{color=2,char}], neighbors:[{q=0,r=0}:[{q=0,r=1}], {q=0,r=1}:[{q=0,r=0}]]}}`);
+        assert(g.toString == `{bombs=[], characters=[Character(0, 1, true, -1, 1, {q=0,r=0}), Character(1, 2, true, -1, 1, {q=0,r=1})], initialPositions=[0:[{q=0,r=0}], 1:[{q=0,r=1}]], board={cells:[{q=0,r=0}:{color=1,char}, {q=0,r=1}:{color=2,char}], neighbors:[{q=0,r=0}:[{q=0,r=1}], {q=0,r=1}:[{q=0,r=0}]]}}`);
 
         g._bombs = [Bomb(Position(0,0), 1, 1, 1)];
         g._board.cellAt(Position(0,0)).addBomb;
-        assert(g.toString == `{bombs=[Bomb({q=0,r=0}, 1, 1, 1)], characters=[Character(0, 1, true, -1, {q=0,r=0}), Character(1, 2, true, -1, {q=0,r=1})], initialPositions=[0:[{q=0,r=0}], 1:[{q=0,r=1}]], board={cells:[{q=0,r=0}:{color=1,char,bomb}, {q=0,r=1}:{color=2,char}], neighbors:[{q=0,r=0}:[{q=0,r=1}], {q=0,r=1}:[{q=0,r=0}]]}}`);
+        assert(g.toString == `{bombs=[Bomb({q=0,r=0}, 1, 1, 1)], characters=[Character(0, 1, true, -1, 1, {q=0,r=0}), Character(1, 2, true, -1, 1, {q=0,r=1})], initialPositions=[0:[{q=0,r=0}], 1:[{q=0,r=1}]], board={cells:[{q=0,r=0}:{color=1,char,bomb}, {q=0,r=1}:{color=2,char}], neighbors:[{q=0,r=0}:[{q=0,r=1}], {q=0,r=1}:[{q=0,r=0}]]}}`);
     }
 }
 
