@@ -39,7 +39,7 @@ void main()
             `{"id":ID, "movement":"move", "direction":"y-"}`,
             `{"id":ID, "movement":"move", "direction":"z-"}`,
             `{"id":ID, "movement":"bomb", "bomb_delay":3, "bomb_range":3}`,
-            `{"id":ID, "movement":"revive", "revive_q":0, "revive_r":0}`,
+            `{"id":ID, "movement":"revive"}`,
         ];
         writeln("possibleActions:", possibleActions);
 

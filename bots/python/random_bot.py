@@ -31,7 +31,7 @@ def main():
             {"movement":"move", "direction":"y-"},
             {"movement":"move", "direction":"z-"},
             {"movement":"bomb", "bomb_delay":3, "bomb_range":3},
-            {"movement":"revive", "revive_q":0, "revive_r":0}
+            {"movement":"revive"}
         ]
 
         for i in range(game_starts.nb_turns_max):

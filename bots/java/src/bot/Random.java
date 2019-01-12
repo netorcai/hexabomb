@@ -46,7 +46,7 @@ public class Random
             possibleActions.add("{\"id\":ID, \"movement\":\"move\", \"direction\":\"y-\"}");
             possibleActions.add("{\"id\":ID, \"movement\":\"move\", \"direction\":\"z-\"}");
             possibleActions.add("{\"id\":ID, \"movement\":\"bomb\", \"bomb_delay\":3, \"bomb_range\":3}");
-            possibleActions.add("{\"id\":ID, \"movement\":\"revive\", \"revive_q\":0, \"revive_r\":0}");
+            possibleActions.add("{\"id\":ID, \"movement\":\"revive\"}");
 
             for (int i = 1; i < gameStarts.nbTurnsMax; i++)
             {
