@@ -29,7 +29,8 @@ Other fields are required depending on the desired ``movement``.
 - ``direction`` (string): The desired direction for ``move`` movements.
   Must either be ``x+``, ``y+``, ``z+``, ``x-``, ``y-``, or ``z-``.
 - ``bomb_range`` (number) and ``bomb_delay`` (number):
-  The desired range and delay for ``bomb`` movements.
+  The desired bomb range and delay for ``bomb`` movements.
+  Both must be respect :math:`\{n \in \mathbb{N}\ |\  2 \leq n \leq 4\}`.
 - (No parameters are required for ``revive`` movements.)
 
 Actions examples
@@ -58,7 +59,7 @@ It will first try to apply each action in a given order,
 then try to apply failed actions until convergence of the game state.
 
 The order into which the actions are applied is described in the following algorithm.
-Feel free to read the actual implementation in `hexabomb applyPlayersActions function`_ for more details.
+Feel free to read the actual implementation in `hexabomb's source code`_ for more details.
 
 .. code-block:: algorithm
 
@@ -164,5 +165,4 @@ Once again, feel free to read `hexabomb's source code`_ in case of doubt.
 .. _GAME_ENDS: https://netorcai.readthedocs.io/en/latest/metaprotocol.html#game-ends
 .. _TURN: https://netorcai.readthedocs.io/en/latest/metaprotocol.html#turn
 .. _TURN_ACK: https://netorcai.readthedocs.io/en/latest/metaprotocol.html#turn-ack
-.. _hexabomb applyPlayersActions function: https://github.com/netorcai/hexabomb/blob/master/src/game.d#L747.
 .. _hexabomb's source code: https://github.com/netorcai/hexabomb/blob/master/src
