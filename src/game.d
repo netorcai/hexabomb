@@ -39,6 +39,8 @@ class Game
         uint[uint] _cellCount; /// The current number of cells of each player
         uint[uint] _score; /// The score of each player
         Position[][int] _initialPositions; /// Initial positions for each color
+        Position[] _specialInitialPositions; /// Initial positions for the special player
+        bool _isSuddenDeath; /// Whether the game is in normal or sudden death mode
     }
 
     invariant
@@ -79,11 +81,29 @@ class Game
             }
         }
 
-        checkInitialPositions(_initialPositions, _board);
+        if ("special_initial_positions" in initialMap)
+        {
+            auto specialInitPos = initialMap["special_initial_positions"];
+            enforce(specialInitPos.type == JSON_TYPE.ARRAY,
+                "special_initial_positions is not an array");
+            foreach(i, o; specialInitPos.array)
+            {
+                enforce(o.type == JSON_TYPE.OBJECT,
+                    "Element " ~ to!string(i) ~ " of special_initial_positions should be an object");
+                Position p;
+                p.q = o["q"].getInt;
+                p.r = o["r"].getInt;
+
+                _specialInitialPositions ~= p;
+            }
+        }
+
+        checkInitialPositions(_initialPositions, _specialInitialPositions, _board);
     }
     unittest
     {
         string s = `[]`;
+        Game g;
         assertThrown(new Game(s.parseJSON));
         assert(collectExceptionMsg(new Game(s.parseJSON)) ==
             "initial map is not an object");
@@ -112,10 +132,41 @@ class Game
         assertThrown(new Game(s.parseJSON));
         assert(collectExceptionMsg(new Game(s.parseJSON)) ==
             "Element 0 of initial_positions should be an object");
+
+        s = `{"cells":[{"q":1,"r":0}], "initial_positions":{"0":[{"q":1,"r":0}]}}`;
+        assertNotThrown(g = new Game(s.parseJSON));
+        assert(g._specialInitialPositions.length == 0);
+
+        s = `{
+          "cells":[{"q":1,"r":0},{"q":2,"r":0}],
+          "initial_positions":{"0":[{"q":1,"r":0}]},
+          "special_initial_positions":"meh"
+        }`;
+        assertThrown(new Game(s.parseJSON));
+        assert(collectExceptionMsg(new Game(s.parseJSON)) ==
+            "special_initial_positions is not an array");
+
+        s = `{
+          "cells":[{"q":1,"r":0},{"q":2,"r":0}],
+          "initial_positions":{"0":[{"q":1,"r":0}]},
+          "special_initial_positions":[4]
+        }`;
+        assertThrown(new Game(s.parseJSON));
+        assert(collectExceptionMsg(new Game(s.parseJSON)) ==
+            "Element 0 of special_initial_positions should be an object");
+
+        s = `{
+          "cells":[{"q":1,"r":0},{"q":2,"r":0}],
+          "initial_positions":{"0":[{"q":1,"r":0}]},
+          "special_initial_positions":[{"q":2,"r":0}]
+        }`;
+        assertNotThrown(g = new Game(s.parseJSON));
+        assert(g._specialInitialPositions.length == 1);
     }
 
     /// Checks whether initial positions are fine. Throw Exception otherwise.
-    static void checkInitialPositions(in Position[][int] positions, in Board b)
+    static void checkInitialPositions(in Position[][int] positions,
+        in Position[] specialPositions, in Board b)
     {
         enforce(positions.length > 0, "There are no initial positions");
         enforce(isPermutation(positions.keys(), iota(0, positions.length)),
@@ -135,13 +186,23 @@ class Game
                 _marks[pos] = true;
             }
         }
+
+        foreach(pos ; specialPositions)
+        {
+            enforce(b.cellExists(pos),
+                    "There is no cell at " ~ pos.toString);
+            enforce(!(pos in _marks),
+                    "Duplication of initial cell " ~ pos.toString);
+            _marks[pos] = true;
+        }
     }
     unittest
     {
         Board b = generateEmptyBoard;
         Position[][int] positions;
-        assertThrown(checkInitialPositions(positions,b));
-        assert(collectExceptionMsg(checkInitialPositions(positions,b)) ==
+        Position[] specialPositions;
+        assertThrown(checkInitialPositions(positions,specialPositions,b));
+        assert(collectExceptionMsg(checkInitialPositions(positions,specialPositions,b)) ==
             "There are no initial positions");
 
         positions = [
@@ -149,8 +210,8 @@ class Game
             1: [],
             3: []
         ];
-        assertThrown(checkInitialPositions(positions,b));
-        assert(collectExceptionMsg(checkInitialPositions(positions,b)) ==
+        assertThrown(checkInitialPositions(positions,specialPositions,b));
+        assert(collectExceptionMsg(checkInitialPositions(positions,specialPositions,b)) ==
             "Initial positions are missing for some players");
 
         positions = [
@@ -158,15 +219,15 @@ class Game
             1: [Position(0,1)],
             2: [Position(0,2), Position(0,3)]
         ];
-        assertThrown(checkInitialPositions(positions,b));
-        assert(collectExceptionMsg(checkInitialPositions(positions,b)) ==
+        assertThrown(checkInitialPositions(positions,specialPositions,b));
+        assert(collectExceptionMsg(checkInitialPositions(positions,specialPositions,b)) ==
             "All players do not have the same number of positions");
 
         positions = [
             0: [Position(0,8)],
         ];
-        assertThrown(checkInitialPositions(positions,b));
-        assert(collectExceptionMsg(checkInitialPositions(positions,b))
+        assertThrown(checkInitialPositions(positions,specialPositions,b));
+        assert(collectExceptionMsg(checkInitialPositions(positions,specialPositions,b))
             .startsWith("There is no cell at"));
 
         positions = [
@@ -174,9 +235,44 @@ class Game
             1: [Position(0,1)],
             2: [Position(0,0)]
         ];
-        assertThrown(checkInitialPositions(positions,b));
-        assert(collectExceptionMsg(checkInitialPositions(positions,b))
+        assertThrown(checkInitialPositions(positions,specialPositions,b));
+        assert(collectExceptionMsg(checkInitialPositions(positions,specialPositions,b))
             .startsWith("Duplication of initial cell"));
+
+        positions = [
+            0: [Position(0,0)],
+            1: [Position(0,1)],
+            2: [Position(0,2)]
+        ];
+        assertNotThrown(checkInitialPositions(positions,specialPositions,b));
+
+        positions = [
+            0: [Position(0,0)],
+            1: [Position(0,1)],
+            2: [Position(0,2)]
+        ];
+        specialPositions = [Position(0,8)];
+        assertThrown(checkInitialPositions(positions,specialPositions,b));
+        assert(collectExceptionMsg(checkInitialPositions(positions,specialPositions,b))
+            .startsWith("There is no cell at"));
+
+        positions = [
+            0: [Position(0,0)],
+            1: [Position(0,1)],
+            2: [Position(0,2)]
+        ];
+        specialPositions = [Position(0,0)];
+        assertThrown(checkInitialPositions(positions,specialPositions,b));
+        assert(collectExceptionMsg(checkInitialPositions(positions,specialPositions,b))
+            .startsWith("Duplication of initial cell"));
+
+        positions = [
+            0: [Position(0,0)],
+            1: [Position(0,1)],
+            2: [Position(0,2)]
+        ];
+        specialPositions = [Position(0,3)];
+        assertNotThrown(checkInitialPositions(positions,specialPositions,b));
     }
 
     void updateScore()
@@ -285,11 +381,12 @@ class Game
         assert(g.describeCellCount.toString == s.parseJSON.toString);
     }
 
-    void initializeGame(in int nbPlayers)
+    void initializeGame(in int nbPlayers, in int nbSpecialPlayers)
     in
     {
         assert(_score.length == 0);
         assert(_cellCount.length == 0);
+        assert(nbSpecialPlayers == 0 || nbSpecialPlayers == 1);
     }
     out
     {
@@ -301,6 +398,7 @@ class Game
     body
     {
         _nbPlayers = nbPlayers;
+        _isSuddenDeath = (nbSpecialPlayers == 1);
         iota(0,nbPlayers).each!(playerID => _score[playerID] = 0);
         placeInitialCharacters(nbPlayers);
 
@@ -331,11 +429,22 @@ class Game
                 nbPlayers, _initialPositions.length));
 
         uint characterID = 0;
+        if (_isSuddenDeath)
+        {
+            foreach(pos; _specialInitialPositions)
+            {
+                Character c = {id: characterID, color:1, pos:pos};
+                _board.cellAt(c.pos).addCharacter(c.color);
+                _characters ~= c;
+                characterID += 1;
+            }
+        }
+
         foreach(playerID; 0..nbPlayers)
         {
             foreach(pos; _initialPositions[playerID])
             {
-                Character c = {id: characterID, color:playerID+1, pos:pos};
+                Character c = {id: characterID, color:playerID+1+_isSuddenDeath, pos:pos};
                 _board.cellAt(c.pos).addCharacter(c.color);
                 _characters ~= c;
                 characterID += 1;
@@ -355,6 +464,46 @@ class Game
         assertThrown(g.placeInitialCharacters(2));
         assertNotThrown(g.placeInitialCharacters(1));
         assert(g._characters[0].pos == Position(0,0));
+
+        g = new Game(`{
+          "cells":[
+            {"q":0, "r":0},
+            {"q":1, "r":0}
+          ],
+          "initial_positions":{
+            "0": [{"q":0, "r":0}]
+          },
+          "special_initial_positions":[{"q":1, "r":0}]
+        }`.parseJSON);
+        g._isSuddenDeath = false;
+        assertNotThrown(g.placeInitialCharacters(1));
+        assert(g._characters[0].pos == Position(0,0));
+        assert(g._characters[0].color == 1);
+        assert(g._board.cellAt(Position(0,0)).color == 1);
+        assert(g._board.cellAt(Position(1,0)).color == 0);
+        assert( g._board.cellAt(Position(0,0)).hasCharacter);
+        assert(!g._board.cellAt(Position(1,0)).hasCharacter);
+
+        g = new Game(`{
+          "cells":[
+            {"q":0, "r":0},
+            {"q":1, "r":0}
+          ],
+          "initial_positions":{
+            "0": [{"q":0, "r":0}]
+          },
+          "special_initial_positions":[{"q":1, "r":0}]
+        }`.parseJSON);
+        g._isSuddenDeath = true;
+        assertNotThrown(g.placeInitialCharacters(1));
+        assert(g._characters[0].pos == Position(1,0));
+        assert(g._characters[1].pos == Position(0,0));
+        assert(g._characters[0].color == 1);
+        assert(g._characters[1].color == 2);
+        assert(g._board.cellAt(Position(0,0)).color == 2);
+        assert(g._board.cellAt(Position(1,0)).color == 1);
+        assert(g._board.cellAt(Position(0,0)).hasCharacter);
+        assert(g._board.cellAt(Position(1,0)).hasCharacter);
     }
 
     /// Generate a JSON description of the current characters
@@ -462,7 +611,7 @@ class Game
             "1": [{"q":0, "r":1}]
           }
         }`.parseJSON);
-        g.initializeGame(2);
+        g.initializeGame(2, 0);
         assert(g.describeState.toString == `{
             "bombs": [],
             "cells":[
@@ -1469,6 +1618,6 @@ private Game generateBasicGame()
       }
     }`.parseJSON);
 
-    g.initializeGame(2);
+    g.initializeGame(2, 0);
     return g;
 }

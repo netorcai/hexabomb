@@ -94,7 +94,7 @@ void doGame(in string mapFilename, in string hostname, in ushort port)
     auto doInit = c.readDoInit();
     writeln("done");
 
-    game.initializeGame(doInit.nbPlayers);
+    game.initializeGame(doInit.nbPlayers, doInit.nbSpecialPlayers);
     JSONValue doInitAck = `{}`.parseJSON;
     doInitAck["all_clients"] = game.describeState;
     c.sendDoInitAck(doInitAck);
