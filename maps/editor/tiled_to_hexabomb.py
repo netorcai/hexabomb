@@ -62,12 +62,16 @@ def convert_tiled_into_hexbomb(input_filename, output_filename, indent):
 
             # The cell is not empty.
             if value > 1:
-                # Populate starting positions.
-                player_id = value - 2
-                if player_id in initial_pos:
-                    initial_pos[player_id].append(axial_dict)
+                if value == 2:
+                    # Special player for sudden death.
+                    print("TODO: handle special players")
                 else:
-                    initial_pos[player_id] = [axial_dict]
+                    # Classical player. Populate starting positions.
+                    player_id = value - 3
+                    if player_id in initial_pos:
+                        initial_pos[player_id].append(axial_dict)
+                    else:
+                        initial_pos[player_id] = [axial_dict]
 
     # Generate an hexabomb JSON map.
     hexabomb = {
