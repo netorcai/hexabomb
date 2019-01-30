@@ -405,7 +405,6 @@ class Game
     {
         assert(_score.length == 0);
         assert(_cellCount.length == 0);
-        assert(nbSpecialPlayers == 0 || nbSpecialPlayers == 1);
     }
     out
     {
@@ -416,6 +415,8 @@ class Game
     }
     body
     {
+        enforce(nbSpecialPlayers == 0 || nbSpecialPlayers == 1,
+            format!"Having 0 or 1 special player is supported, not more (got %d)"(nbSpecialPlayers));
         _nbPlayers = nbPlayers;
         _isSuddenDeath = (nbSpecialPlayers == 1);
         iota(0,nbPlayers+_isSuddenDeath).each!(playerID => _score[playerID] = 0);
