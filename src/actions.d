@@ -42,15 +42,6 @@ unittest
     assertThrown(readDirectionString(`y+ `));
 }
 
-void checkBombProperties(in int bombRange, in int bombDelay)
-{
-    enforce(bombDelay >= 2 && bombDelay <= 4,
-        format!"invalid bomb delay %s"(bombDelay));
-
-    enforce(bombRange >= 2 && bombRange <= 4,
-        format!"invalid bomb range %s"(bombRange));
-}
-
 struct CharacterActions
 {
     uint characterID;
@@ -80,8 +71,6 @@ struct CharacterActions
             case CharacterMovement.bomb:
                 bombRange = v["bomb_range"].getInt;
                 bombDelay = v["bomb_delay"].getInt;
-
-                checkBombProperties(bombRange, bombDelay);
                 return;
             case CharacterMovement.revive:
                 return;
@@ -136,26 +125,6 @@ struct CharacterActions
 
         s = `{"id":0, "movement":"bomb", "bomb_range":2, "bomb_delay":3}`;
         assertNotThrown(CharacterActions(s.parseJSON));
-
-        s = `{"id":0, "movement":"bomb", "bomb_range":2, "bomb_delay":1}`;
-        assertThrown(CharacterActions(s.parseJSON));
-        assert(collectExceptionMsg(CharacterActions(s.parseJSON)) ==
-            "invalid bomb delay 1");
-
-        s = `{"id":0, "movement":"bomb", "bomb_range":2, "bomb_delay":5}`;
-        assertThrown(CharacterActions(s.parseJSON));
-        assert(collectExceptionMsg(CharacterActions(s.parseJSON)) ==
-            "invalid bomb delay 5");
-
-        s = `{"id":0, "movement":"bomb", "bomb_range":1, "bomb_delay":3}`;
-        assertThrown(CharacterActions(s.parseJSON));
-        assert(collectExceptionMsg(CharacterActions(s.parseJSON)) ==
-            "invalid bomb range 1");
-
-        s = `{"id":0, "movement":"bomb", "bomb_range":5, "bomb_delay":3}`;
-        assertThrown(CharacterActions(s.parseJSON));
-        assert(collectExceptionMsg(CharacterActions(s.parseJSON)) ==
-            "invalid bomb range 5");
 
         // Revive
         s = `{"id":0, "movement":"revive"}`;

@@ -45,8 +45,8 @@ class Game
 
     invariant
     {
-        assert(_cellCount.length == _nbPlayers);
-        assert(_score.length == _nbPlayers);
+        assert(_cellCount.length == _nbPlayers + _isSuddenDeath);
+        assert(_score.length == _nbPlayers + _isSuddenDeath);
     }
 
     this(in JSONValue initialMap)
@@ -277,16 +277,35 @@ class Game
 
     void updateScore()
     {
+        // Update cell count.
         uint[uint] count = _board.cellCountPerColor;
-
         foreach(playerID, ref score; _score)
         {
             uint color = playerID + 1;
             if (color in count)
-            {
                 _cellCount[playerID] = count[color];
-                score += count[color];
+            else
+                _cellCount[playerID] = 0;
+        }
+
+        // Update alive character count.
+        uint[uint] aliveCharacterCount;
+        foreach(character; _characters.filter!(c => c.alive))
+        {
+            int playerID = character.color - 1;
+            aliveCharacterCount[playerID] += 1;
+        }
+
+        // Update the score itself.
+        foreach(playerID, ref score; _score)
+        {
+            if (_isSuddenDeath)
+            {
+                if (playerID in aliveCharacterCount)
+                    score = _turnNumber;
             }
+            else
+                score += _cellCount[playerID];
         }
     }
     unittest
@@ -390,8 +409,8 @@ class Game
     }
     out
     {
-        assert(_score.length == nbPlayers);
-        assert(_cellCount.length == nbPlayers);
+        assert(_score.length == nbPlayers+nbSpecialPlayers);
+        assert(_cellCount.length == nbPlayers+nbSpecialPlayers);
         _score.each!(s => assert(s == 0));
         _cellCount.each!(c => assert(c > 0));
     }
@@ -399,7 +418,7 @@ class Game
     {
         _nbPlayers = nbPlayers;
         _isSuddenDeath = (nbSpecialPlayers == 1);
-        iota(0,nbPlayers).each!(playerID => _score[playerID] = 0);
+        iota(0,nbPlayers+_isSuddenDeath).each!(playerID => _score[playerID] = 0);
         placeInitialCharacters(nbPlayers);
 
         uint[uint] count = _board.cellCountPerColor;
@@ -418,7 +437,6 @@ class Game
     }
     out
     {
-        assert(_characters.length % nbPlayers == 0);
         foreach(c; _characters)
             assert(_board.cellAt(c.pos).hasCharacter);
     }
@@ -662,7 +680,7 @@ class Game
         // Update the game state description
         gameState = describeState;
     }
-    unittest
+    unittest // Classical game mode
     {
         auto g = generateBasicGame;
         JSONValue gameState;
@@ -895,22 +913,287 @@ class Game
         assert(g._characters[0].bombCount == 2); // Increased
         assert(g._characters[1].bombCount == 2);
     }
+    unittest // Sudden death game mode
+    {
+        auto g = generateSuddenDeathGame;
+        JSONValue gameState;
+        nm.DoTurnMessage doTurnMsg;
+        int currentWinnerPlayerID;
+
+        // Initial state.
+        assert(g._isSuddenDeath == true);
+        assert(g._characters.length == 3);
+        assert(g._characters[0].color == 1); // special player
+        assert(g._characters[0].pos == Position( 0, 0));
+        assert(g._characters[1].color == 2); // player1
+        assert(g._characters[1].pos == Position(-1, 0));
+        assert(g._characters[2].color == 3); // player2
+        assert(g._characters[2].pos == Position( 1, 0));
+        assert(g._score[0] == 0);
+        assert(g._score[1] == 0);
+        assert(g._score[2] == 0);
+
+        /+ First turn.
+           - All characters try to drop an overpowered bomb.
+           - Only the special character succeeds in doing it.
+        +/
+        doTurnMsg = nm.parseDoTurnMessage(`{
+          "message_type": "DO_TURN",
+          "player_actions": [
+            {"player_id": 0, "turn_number": 1, "actions":[{"id":0, "movement":"bomb", "bomb_range":100, "bomb_delay":100}]},
+            {"player_id": 1, "turn_number": 1, "actions":[{"id":1, "movement":"bomb", "bomb_range":100, "bomb_delay":100}]},
+            {"player_id": 2, "turn_number": 1, "actions":[{"id":2, "movement":"bomb", "bomb_range":100, "bomb_delay":100}]}
+          ]
+        }`.parseJSON);
+        assertNotThrown(g.doTurn(doTurnMsg, currentWinnerPlayerID, gameState));
+        assert( g._board.cellAt(Position( 0, 0)).hasBomb); // success (special player)
+        assert(!g._board.cellAt(Position(-1, 0)).hasBomb); // failure (normal player 1)
+        assert(!g._board.cellAt(Position( 1, 0)).hasBomb); // failure (normal player 2)
+        assert(g._characters[0].pos == Position( 0, 0));
+        assert(g._characters[1].pos == Position(-1, 0));
+        assert(g._characters[2].pos == Position( 1, 0));
+        assert(g._score[0] == 1);
+        assert(g._score[1] == 1);
+        assert(g._score[2] == 1);
+
+        /+ Second turn.
+           - Special character moves up and right (y+)
+           - Player1 tries to move right (x+)but this fails (because of a bomb there)
+           - Player2 does nothing (does not reply in time =/)
+        +/
+        doTurnMsg = nm.parseDoTurnMessage(`{
+          "message_type": "DO_TURN",
+          "player_actions": [
+            {"player_id": 0, "turn_number": 2, "actions":[{"id":0, "movement":"move", "direction":"y+"}]},
+            {"player_id": 1, "turn_number": 2, "actions":[{"id":1, "movement":"move", "direction":"x+"}]}
+          ]
+        }`.parseJSON);
+        assertNotThrown(g.doTurn(doTurnMsg, currentWinnerPlayerID, gameState));
+        assert(g._characters[0].pos == Position( 1,-1)); // moved
+        assert(g._characters[1].pos == Position(-1, 0)); // move failed
+        assert(g._characters[2].pos == Position( 1, 0)); // no action
+        assert(g._score[0] == 2);
+        assert(g._score[1] == 2);
+        assert(g._score[2] == 2);
+
+        /+ Third turn.
+           - All players drop a small bomb (delay=3,range=2) and succeed in doing so.
+        +/
+        doTurnMsg = nm.parseDoTurnMessage(`{
+          "message_type": "DO_TURN",
+          "player_actions": [
+            {"player_id": 0, "turn_number": 3, "actions":[{"id":0, "movement":"bomb", "bomb_range":2, "bomb_delay":3}]},
+            {"player_id": 1, "turn_number": 3, "actions":[{"id":1, "movement":"bomb", "bomb_range":2, "bomb_delay":3}]},
+            {"player_id": 2, "turn_number": 3, "actions":[{"id":2, "movement":"bomb", "bomb_range":2, "bomb_delay":3}]}
+          ]
+        }`.parseJSON);
+        assertNotThrown(g.doTurn(doTurnMsg, currentWinnerPlayerID, gameState));
+        assert(g._characters[0].pos == Position( 1,-1)); // no move action
+        assert(g._characters[1].pos == Position(-1, 0)); // no move action
+        assert(g._characters[2].pos == Position( 1, 0)); // no move action
+        assert(g._board.cellAt(Position( 1,-1)).hasBomb); // new bomb
+        assert(g._board.cellAt(Position(-1, 0)).hasBomb); // new bomb
+        assert(g._board.cellAt(Position( 1, 0)).hasBomb); // new bomb
+        assert(g._score[0] == 3);
+        assert(g._score[1] == 3);
+        assert(g._score[2] == 3);
+
+        /+ Fourth turn.
+           - Special player drops a bomb and succeeds in doing so.
+           - Other players move in a direction and succeed in doing so.
+        +/
+        doTurnMsg = nm.parseDoTurnMessage(`{
+          "message_type": "DO_TURN",
+          "player_actions": [
+            {"player_id": 0, "turn_number": 4, "actions":[{"id":0, "movement":"bomb", "bomb_range":2, "bomb_delay":2}]},
+            {"player_id": 1, "turn_number": 4, "actions":[{"id":1, "movement":"move", "direction":"x-"}]},
+            {"player_id": 2, "turn_number": 4, "actions":[{"id":2, "movement":"move", "direction":"x+"}]}
+          ]
+        }`.parseJSON);
+        assertNotThrown(g.doTurn(doTurnMsg, currentWinnerPlayerID, gameState));
+        assert(g._characters[0].pos == Position( 1,-1)); // no move action
+        assert(g._characters[1].pos == Position(-2, 0)); // moved
+        assert(g._characters[2].pos == Position( 2, 0)); // moved
+        assert( g._board.cellAt(Position( 1,-1)).hasBomb); // new bomb
+        assert(g._score[0] == 4);
+        assert(g._score[1] == 4);
+        assert(g._score[2] == 4);
+
+        /+ Fifth turn.
+           - Special player tries to drop another bomb and succeeds.
+           - Player 1 tries to drop another bomb but fails (its bomb count is 0).
+           - Player 2 moves away from bombs.
+        +/
+        doTurnMsg = nm.parseDoTurnMessage(`{
+          "message_type": "DO_TURN",
+          "player_actions": [
+            {"player_id": 0, "turn_number": 5, "actions":[{"id":0, "movement":"move", "direction":"x+"}]},
+            {"player_id": 1, "turn_number": 5, "actions":[{"id":1, "movement":"bomb", "bomb_range":2, "bomb_delay":2}]},
+            {"player_id": 2, "turn_number": 5, "actions":[{"id":2, "movement":"move", "direction":"z-"}]}
+          ]
+        }`.parseJSON);
+        assertNotThrown(g.doTurn(doTurnMsg, currentWinnerPlayerID, gameState));
+        assert(g._characters[0].pos == Position( 2,-1)); // moved
+        assert(g._characters[1].pos == Position(-2, 0)); // no move action
+        assert(g._characters[2].pos == Position( 2, 1)); // moved
+        assert(!g._board.cellAt(Position(-2, 0)).hasBomb); // no new bomb (fail)
+        assert(g._score[0] == 5);
+        assert(g._score[1] == 5);
+        assert(g._score[2] == 5);
+
+        /+ Sixth turn.
+          - All bombs explode.
+          - Player 1 is killed in the explosions.
+          - Player 2 survives.
+        +/
+        doTurnMsg = nm.parseDoTurnMessage(`{
+          "message_type": "DO_TURN",
+          "player_actions": [
+            {"player_id": 0, "turn_number": 6, "actions":[]},
+            {"player_id": 1, "turn_number": 6, "actions":[]},
+            {"player_id": 2, "turn_number": 6, "actions":[]}
+          ]
+        }`.parseJSON);
+        assertNotThrown(g.doTurn(doTurnMsg, currentWinnerPlayerID, gameState));
+        assert(g._characters[0].pos == Position( 2,-1)); // no move action
+        assert(g._characters[1].pos == Position(-2, 0)); // no move action
+        assert(g._characters[2].pos == Position( 2, 1)); // no move action
+        assert( g._characters[0].alive); // special player is immune to bombs
+        assert(!g._characters[1].alive); // normal player is not
+        assert( g._characters[2].alive); // this one was not in an explosion range
+        assert(g._characters[1].reviveDelay == 3);
+        assert(g._bombs.length == 0);
+        assert(g._score[0] == 6);
+        assert(g._score[1] == 5); // dead!
+        assert(g._score[2] == 6);
+
+        /+ Seventh turn.
+           - Special player drops a bomb that will kill the remaining player.
+        +/
+        doTurnMsg = nm.parseDoTurnMessage(`{
+          "message_type": "DO_TURN",
+          "player_actions": [
+            {"player_id": 0, "turn_number": 7, "actions":[{"id":0, "movement":"bomb", "bomb_range":2, "bomb_delay":2}]},
+            {"player_id": 1, "turn_number": 7, "actions":[]},
+            {"player_id": 2, "turn_number": 7, "actions":[]}
+          ]
+        }`.parseJSON);
+        assertNotThrown(g.doTurn(doTurnMsg, currentWinnerPlayerID, gameState));
+        assert(g._characters[0].pos == Position( 2,-1)); // no move action
+        assert(g._characters[1].pos == Position(-2, 0)); // no move action
+        assert(g._characters[2].pos == Position( 2, 1)); // no move action
+        assert( g._characters[0].alive);
+        assert(!g._characters[1].alive);
+        assert( g._characters[2].alive);
+        assert(g._characters[1].reviveDelay == 2);
+        assert(g._board.cellAt(Position( 2,-1)).hasBomb); // new bomb
+        assert(g._score[0] == 7);
+        assert(g._score[1] == 5);
+        assert(g._score[2] == 7);
+
+        /+ Eighth turn.
+           - Special player moves to Player1's initial location.
+        +/
+        doTurnMsg = nm.parseDoTurnMessage(`{
+          "message_type": "DO_TURN",
+          "player_actions": [
+            {"player_id": 0, "turn_number": 8, "actions":[{"id":0, "movement":"move", "direction":"y-"}]},
+            {"player_id": 1, "turn_number": 8, "actions":[]},
+            {"player_id": 2, "turn_number": 8, "actions":[]}
+          ]
+        }`.parseJSON);
+        assertNotThrown(g.doTurn(doTurnMsg, currentWinnerPlayerID, gameState));
+        assert(g._characters[0].pos == Position( 1, 0)); // moved
+        assert(g._characters[1].pos == Position(-2, 0)); // no move action
+        assert(g._characters[2].pos == Position( 2, 1)); // no move action
+        assert( g._characters[0].alive);
+        assert(!g._characters[1].alive);
+        assert( g._characters[2].alive);
+        assert(g._characters[1].reviveDelay == 1);
+        assert(g._score[0] == 8);
+        assert(g._score[1] == 5);
+        assert(g._score[2] == 8);
+
+        /+ Ninth turn.
+           - Special player drops a bomb so all cells of Player2 are wiped out.
+           - Player1 tries to revive but its revive delay has not been reached.
+           - Player2 dies.
+        +/
+        doTurnMsg = nm.parseDoTurnMessage(`{
+          "message_type": "DO_TURN",
+          "player_actions": [
+            {"player_id": 0, "turn_number": 9, "actions":[{"id":0, "movement":"bomb", "bomb_range":2, "bomb_delay":2}]},
+            {"player_id": 1, "turn_number": 9, "actions":[{"id":1, "movement":"revive"}]},
+            {"player_id": 2, "turn_number": 9, "actions":[]}
+          ]
+        }`.parseJSON);
+        assertNotThrown(g.doTurn(doTurnMsg, currentWinnerPlayerID, gameState));
+        assert(g._characters[0].pos == Position( 1, 0)); // no move action
+        assert(g._characters[1].pos == Position(-2, 0)); // no move action
+        assert(g._characters[2].pos == Position( 2, 1)); // no move action
+        assert( g._characters[0].alive);
+        assert(!g._characters[1].alive); // Revive failed (revive delay)
+        assert(!g._characters[2].alive); // dead!
+        assert(!g._board.cellAt(Position( 1, 0)).hasBomb); // no new bomb (it already exploded)
+        assert(g._characters[1].reviveDelay == 0);
+        assert(g._score[0] == 9);
+        assert(g._score[1] == 5);
+        assert(g._score[2] == 8); // dead!
+        assert(g._cellCount[2] == 0);
+
+        /+ Tenth turn.
+           - Player1 still tries to revive, but this is not possible in sudden death.
+        +/
+        doTurnMsg = nm.parseDoTurnMessage(`{
+          "message_type": "DO_TURN",
+          "player_actions": [
+            {"player_id": 0, "turn_number": 9, "actions":[]},
+            {"player_id": 1, "turn_number": 9, "actions":[{"id":1, "movement":"revive"}]},
+            {"player_id": 2, "turn_number": 9, "actions":[]}
+          ]
+        }`.parseJSON);
+        assertNotThrown(g.doTurn(doTurnMsg, currentWinnerPlayerID, gameState));
+        assert(g._characters[0].pos == Position( 1, 0)); // no move action
+        assert(g._characters[1].pos == Position(-2, 0)); // no move action
+        assert(g._characters[2].pos == Position( 2, 1)); // no move action
+        assert( g._characters[0].alive);
+        assert(!g._characters[1].alive); // Revive failed (not allowed in sudden death)
+        assert(!g._characters[2].alive);
+        assert(g._characters[1].reviveDelay == 0);
+        assert(g._score[0] == 10);
+        assert(g._score[1] == 5);
+        assert(g._score[2] == 8);
+    }
 
     private int determineCurrentWinnerPlayerID()
     {
-        if (_score.length == 0)
-            return -1;
-        else if (_score.length == 1)
-            return 0;
-
         import std.typecons;
         alias ScorePid = Tuple!(uint, "score", uint, "playerID");
 
         auto sortedScores = _score.keys.map!(playerID => ScorePid(_score[playerID], playerID)).array.sort!"a > b";
 
-        if (sortedScores[0].score > sortedScores[1].score)
-            return sortedScores[0].playerID; // Strictly first
-        return -1; // Draw
+        if (_isSuddenDeath)
+        {
+            auto sortedWithoutSpecial = sortedScores.filter!(sp => sp.playerID != 0).array;
+            if (sortedWithoutSpecial.length == 0)
+                return -1;
+            else if (sortedWithoutSpecial.length == 1)
+                return sortedWithoutSpecial[0].playerID;
+            else if (sortedWithoutSpecial[0].score > sortedWithoutSpecial[1].score)
+                return sortedWithoutSpecial[0].playerID;
+            else
+                return -1;
+        }
+        else
+        {
+            if (sortedScores.length == 0)
+                return -1;
+            else if (sortedScores.length == 1)
+                return sortedScores[0].playerID;
+            else if (sortedScores[0].score > sortedScores[1].score)
+                return sortedScores[0].playerID; // Strictly first
+            return -1; // Draw
+        }
     }
     unittest
     {
@@ -933,6 +1216,45 @@ class Game
         assert(g.determineCurrentWinnerPlayerID == -1);
         g._score = [0:10, 1:13, 2:5, 3:1, 4:5];
         assert(g.determineCurrentWinnerPlayerID == 1);
+
+        // Sudden death, no player.
+        g._isSuddenDeath = true;
+        g._score.clear;
+        assert(g.determineCurrentWinnerPlayerID == -1);
+
+        // Sudden death, single special player
+        g._score = [0:0];
+        assert(g.determineCurrentWinnerPlayerID == -1);
+        g._score = [0:42];
+        assert(g.determineCurrentWinnerPlayerID == -1);
+
+        // Sudden death, single normal player
+        g._score = [1:0];
+        assert(g.determineCurrentWinnerPlayerID == 1);
+        g._score = [1:42];
+        assert(g.determineCurrentWinnerPlayerID == 1);
+
+        // Sudden death, special vs normal player
+        g._score = [0:0, 1:0];
+        assert(g.determineCurrentWinnerPlayerID == 1);
+        g._score = [0:42, 1:1];
+        assert(g.determineCurrentWinnerPlayerID == 1);
+
+        // Sudden death, special vs several normal players
+        g._score = [0:0, 1:0, 2:0];
+        assert(g.determineCurrentWinnerPlayerID == -1);
+        g._score = [0:42, 1:0, 2:0];
+        assert(g.determineCurrentWinnerPlayerID == -1);
+        g._score = [0:42, 1:50, 2:50];
+        assert(g.determineCurrentWinnerPlayerID == -1);
+        g._score = [0:42, 1:51, 2:50];
+        assert(g.determineCurrentWinnerPlayerID == 1);
+        g._score = [0:42, 1:50, 2:51];
+        assert(g.determineCurrentWinnerPlayerID == 2);
+        g._score = [0:100, 1:51, 2:50];
+        assert(g.determineCurrentWinnerPlayerID == 1);
+        g._score = [0:100, 1:50, 2:51];
+        assert(g.determineCurrentWinnerPlayerID == 2);
     }
 
     /// Applies the actions of the players (move characters, drop bombs)...
@@ -988,6 +1310,8 @@ class Game
         final switch (action.movement)
         {
             case CharacterMovement.revive:
+                enforce(!_isSuddenDeath,
+                    format!"Character id=%s cannot be revived (game mode is sudden death)"(c.id));
                 enforce(c.alive == false,
                     format!"Character id=%s cannot be revived (already alive)"(c.id));
                 enforce(c.reviveDelay == 0,
@@ -1040,6 +1364,17 @@ class Game
                 enforce(!cell.hasBomb,
                     format!"Character id=%s cannot spawn a bomb (cell is already bombed)"(c.id));
 
+                int bombMiniCheck = 2;
+                int bombMaxiCheck = 4;
+                if (_isSuddenDeath && c.color == 1) // Special players have overpowered bomb range.
+                    bombMaxiCheck = 100;
+
+                enforce(action.bombDelay >= bombMiniCheck && action.bombDelay <= bombMaxiCheck,
+                    format!"Character id=%s cannot spawn a bomb (invalid bomb delay %s)"(c.id, action.bombDelay));
+
+                enforce(action.bombRange >= bombMiniCheck && action.bombRange <= bombMaxiCheck,
+                    format!"Character id=%s cannot spawn a bomb (invalid bomb range %s)"(c.id, action.bombRange));
+
                 /+ Everything seems fine. We can spawn the bomb.
 
                    bombDelay + 1 is used to minimize players' confusion.
@@ -1047,7 +1382,8 @@ class Game
                    is seen with a delay=2 the first turn the bomb appears
                    (otherwise, would appear with delay=1)
                 +/
-                c.bombCount -= 1;
+                if (!_isSuddenDeath || c.color != 1)
+                    c.bombCount -= 1;
                 cell.addBomb;
                 _bombs ~= Bomb(c.pos, c.color, action.bombRange, action.bombDelay + 1);
                 return true;
@@ -1134,9 +1470,29 @@ class Game
         // bomb //
         //////////
         a.movement = CharacterMovement.bomb;
+        // Invalid delay
         a.bombRange = 3;
         a.bombDelay = 1;
+        assertThrown(g.applyAction(a, 1));
+        assert(collectExceptionMsg(g.applyAction(a, 1)) ==
+            `Character id=0 cannot spawn a bomb (invalid bomb delay 1)`);
+        a.bombDelay = 5;
+        assertThrown(g.applyAction(a, 1));
+        assert(collectExceptionMsg(g.applyAction(a, 1)) ==
+            `Character id=0 cannot spawn a bomb (invalid bomb delay 5)`);
+        // Invalid range
+        a.bombDelay = 2;
+        a.bombRange = 1;
+        assertThrown(g.applyAction(a, 1));
+        assert(collectExceptionMsg(g.applyAction(a, 1)) ==
+            `Character id=0 cannot spawn a bomb (invalid bomb range 1)`);
+        a.bombRange = 5;
+        assertThrown(g.applyAction(a, 1));
+        assert(collectExceptionMsg(g.applyAction(a, 1)) ==
+            `Character id=0 cannot spawn a bomb (invalid bomb range 5)`);
         // OK
+        a.bombRange = 3;
+        a.bombDelay = 2;
         assert(g.applyAction(a, 1) == true);
         // No bomb left
         assertThrown(g.applyAction(a, 1));
@@ -1148,6 +1504,8 @@ class Game
         assert(collectExceptionMsg(g.applyAction(a, 1)) ==
             `Character id=0 cannot spawn a bomb (cell is already bombed)`);
         // Kill the characters
+        assert(c.alive == true);
+        g.doBombTurn;
         assert(c.alive == true);
         g.doBombTurn;
         assert(c.alive == true);
@@ -1228,8 +1586,10 @@ class Game
             converged = newlyExplodedBombs.empty;
         } while(!converged);
 
-        // Kill characters on exploded cells.
-        auto killedCharacters = _characters.filter!(c => c.pos in boardAlterations);
+        // Kill (non-special) characters on exploded cells.
+        auto killedCharacters = _characters.filter!(c =>
+            (c.pos in boardAlterations) &&
+            (!_isSuddenDeath || c.color != 1));
         foreach (ref c; killedCharacters)
         {
             c.alive = false;
@@ -1242,7 +1602,16 @@ class Game
         // Update the board
         foreach (pos, colorDist; boardAlterations)
         {
-            _board.cellAt(pos).explode(colorDist.color);
+            Cell * cell = _board.cellAt(pos);
+
+            if (_isSuddenDeath && cell.hasCharacter && cell.color == 1)
+            {
+                // Special players do not die, but bombs on their cell do explode.
+                cell.explode(colorDist.color);
+                cell.addCharacter(1);
+            }
+            else
+                cell.explode(colorDist.color);
         }
     }
     unittest // One single bomb explodes (kill chars and propagate color)
@@ -1619,5 +1988,57 @@ private Game generateBasicGame()
     }`.parseJSON);
 
     g.initializeGame(2, 0);
+    return g;
+}
+
+private Game generateSuddenDeathGame()
+{
+    auto g = new Game(`{
+      "cells":[
+        {"q":-3,"r":0},
+        {"q":-3,"r":1},
+        {"q":-3,"r":2},
+        {"q":-3,"r":3},
+        {"q":-2,"r":-1},
+        {"q":-2,"r":0},
+        {"q":-2,"r":1},
+        {"q":-2,"r":2},
+        {"q":-2,"r":3},
+        {"q":-1,"r":-2},
+        {"q":-1,"r":-1},
+        {"q":-1,"r":0},
+        {"q":-1,"r":1},
+        {"q":-1,"r":2},
+        {"q":-1,"r":3},
+        {"q":0,"r":-3},
+        {"q":0,"r":-2},
+        {"q":0,"r":-1},
+        {"q":0,"r":0},
+        {"q":0,"r":1},
+        {"q":0,"r":2},
+        {"q":0,"r":3},
+        {"q":1,"r":-3},
+        {"q":1,"r":-2},
+        {"q":1,"r":-1},
+        {"q":1,"r":0},
+        {"q":1,"r":1},
+        {"q":1,"r":2},
+        {"q":2,"r":-3},
+        {"q":2,"r":-2},
+        {"q":2,"r":-1},
+        {"q":2,"r":0},
+        {"q":2,"r":1},
+        {"q":3,"r":-3},
+        {"q":3,"r":-2},
+        {"q":3,"r":-1},
+        {"q":3,"r":0}],
+      "initial_positions":{
+        "0": [{"q":-1, "r": 0}],
+        "1": [{"q": 1, "r": 0}]
+      },
+      "special_initial_positions":[{"q":0, "r":0}]
+    }`.parseJSON);
+
+    g.initializeGame(2, 1);
     return g;
 }
