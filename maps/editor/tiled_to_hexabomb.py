@@ -45,6 +45,7 @@ def convert_tiled_into_hexbomb(input_filename, output_filename, indent):
     # https://www.redblobgames.com/grids/hexagons/
     cells = []
     initial_pos = {}
+    special_initial_pos = []
 
     for i, value in enumerate(tiled['layers'][0]['data']):
         # Read implicit (=index) 'odd-r' coordinates.
@@ -64,7 +65,8 @@ def convert_tiled_into_hexbomb(input_filename, output_filename, indent):
             if value > 1:
                 if value == 2:
                     # Special player for sudden death.
-                    print("TODO: handle special players")
+                    player_id = 0
+                    special_initial_pos.append(axial_dict)
                 else:
                     # Classical player. Populate starting positions.
                     player_id = value - 3
@@ -76,7 +78,8 @@ def convert_tiled_into_hexbomb(input_filename, output_filename, indent):
     # Generate an hexabomb JSON map.
     hexabomb = {
         "cells": cells,
-        "initial_positions": initial_pos
+        "initial_positions": initial_pos,
+        "special_initial_positions": special_initial_pos
     }
     hexabomb_json = json.dumps(hexabomb, indent=indent, sort_keys=True)
 
