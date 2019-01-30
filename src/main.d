@@ -1,4 +1,5 @@
 import std.conv;
+import std.exception;
 import std.json;
 import std.format;
 import std.stdio;
@@ -93,6 +94,9 @@ void doGame(in string mapFilename, in string hostname, in ushort port)
     write("Waiting for DO_INIT... "); stdout.flush();
     auto doInit = c.readDoInit();
     writeln("done");
+
+    enforce(doInit.nbSpecialPlayers == 0 || doInit.nbSpecialPlayers == 1,
+            format!"Having 0 or 1 special player is supported, not more (got %d)"(doInit.nbSpecialPlayers));
 
     game.initializeGame(doInit.nbPlayers, doInit.nbSpecialPlayers);
     JSONValue doInitAck = `{}`.parseJSON;
