@@ -69,7 +69,7 @@ void parseCharacters(in JSONValue[] jsonCharacters, out Character[] characters)
     {
         Coordinates coord;
         coord.q = jsonCharacter["q"].getInt;
-        coord.q = jsonCharacter["r"].getInt;
+        coord.r = jsonCharacter["r"].getInt;
 
         Character c;
         c.id = jsonCharacter["id"].getInt;
@@ -88,7 +88,7 @@ void parseBombs(in JSONValue[] jsonBombs, out Bomb[] bombs)
     {
         Coordinates coord;
         coord.q = jsonBomb["q"].getInt;
-        coord.q = jsonBomb["r"].getInt;
+        coord.r = jsonBomb["r"].getInt;
 
         Bomb b;
         b.coord = coord;
