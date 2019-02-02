@@ -405,7 +405,6 @@ class Game
     {
         assert(_score.length == 0);
         assert(_cellCount.length == 0);
-        assert(nbSpecialPlayers == 0 || nbSpecialPlayers == 1);
     }
     out
     {
@@ -416,6 +415,10 @@ class Game
     }
     body
     {
+        enforce(nbSpecialPlayers == 0 || nbSpecialPlayers == 1,
+            "hexabomb only supports 0 or 1 special players");
+        enforce((nbSpecialPlayers == 0) || (_specialInitialPositions.length > 0),
+            "loaded map does not support sudden death mode");
         _nbPlayers = nbPlayers;
         _isSuddenDeath = (nbSpecialPlayers == 1);
         iota(0,nbPlayers+_isSuddenDeath).each!(playerID => _score[playerID] = 0);
@@ -427,6 +430,25 @@ class Game
             uint color = playerID + 1;
             _cellCount[playerID] = count[color];
         }
+    }
+    unittest
+    {
+        string s = `{
+          "cells":[
+            {"q":0, "r":0}
+          ],
+          "initial_positions":{
+            "0": [{"q":0, "r":0}]
+          }
+        }`;
+        Game g = new Game(s.parseJSON);
+        assertThrown(g.initializeGame(1, 2));
+        assert(collectExceptionMsg(g.initializeGame(1, 2)) ==
+            "hexabomb only supports 0 or 1 special players");
+
+        assertThrown(g.initializeGame(1, 1));
+        assert(collectExceptionMsg(g.initializeGame(1, 1)) ==
+            "loaded map does not support sudden death mode");
     }
 
     // Generate the initial characters. Throw Exception on error
