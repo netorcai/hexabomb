@@ -41,6 +41,7 @@ class Game
         Position[][int] _initialPositions; /// Initial positions for each color
         Position[] _specialInitialPositions; /// Initial positions for the special player
         bool _isSuddenDeath; /// Whether the game is in normal or sudden death mode
+        Position[][uint] _lastExplodedCells; /// The cells that exploded in current turn. Key is the cells new color.
     }
 
     invariant
@@ -621,6 +622,72 @@ class Game
             .parseJSON.toString);
     }
 
+    private JSONValue describeExplosions() pure const
+    out(r)
+    {
+        assert(r.type == JSON_TYPE.OBJECT);
+    }
+    body
+    {
+        JSONValue v = `{}`.parseJSON;
+
+        foreach(color, positions; _lastExplodedCells)
+        {
+            // Generate an array of positions
+            JSONValue aValue = `[]`.parseJSON;
+            foreach (pos; positions)
+            {
+                JSONValue oValue = `{}`.parseJSON;
+                oValue.object["q"] = pos.q;
+                oValue.object["r"] = pos.r;
+
+                aValue.array ~= oValue;
+            }
+
+            v.object[to!string(color)] = aValue;
+        }
+
+        return v;
+    }
+    unittest
+    {
+        Game g = new Game(`{
+          "cells":[
+            {"q":0, "r":0},
+            {"q":0, "r":1},
+            {"q":0, "r":2},
+            {"q":0, "r":3},
+            {"q":0, "r":4},
+            {"q":0, "r":5},
+            {"q":0, "r":6},
+            {"q":0, "r":7},
+            {"q":0, "r":8}
+          ],
+          "initial_positions":{
+            "0": [{"q":0, "r":0}]
+          }
+        }`.parseJSON);
+        assert(g.describeExplosions == `{}`.parseJSON);
+
+        g._bombs = [
+            Bomb(Position(0,0), 1, 1, 2)
+        ];
+        g.doBombTurn;
+        assert(g.describeExplosions == `{}`.parseJSON);
+        g.doBombTurn;
+        assert(g.describeExplosions == `{"1": [{"q":0, "r":0}, {"q":0, "r":1}]}`.parseJSON);
+        g.doBombTurn;
+        assert(g.describeExplosions == `{}`.parseJSON);
+
+        g._bombs = [
+            Bomb(Position(0,0), 1, 1, 1),
+            Bomb(Position(0,2), 2, 1, 1),
+        ];
+        g.doBombTurn;
+        assert(g.describeExplosions ==
+            `{"1":[{"q":0, "r":0}], "0":[{"q":0, "r":1}], "2":[{"q":0, "r":2}, {"q":0, "r":3}]}`.parseJSON);
+    }
+
     /// Generate a JSON description of the current game state
     JSONValue describeState() const
     out(r)
@@ -633,6 +700,7 @@ class Game
         v.object["cells"] = _board.toJSON;
         v.object["characters"] = describeCharacters;
         v.object["bombs"] = describeBombs;
+        v.object["explosions"] = describeExplosions;
         v.object["score"] = describeScore;
         v.object["cell_count"] = describeCellCount;
 
@@ -663,6 +731,7 @@ class Game
               {"id":0, "color":1, "q":0, "r":0, "alive":true, "revive_delay":-1, "bomb_count": 1},
               {"id":1, "color":2, "q":0, "r":1, "alive":true, "revive_delay":-1, "bomb_count": 1}
             ],
+            "explosions": {},
             "score":{
               "0": 0,
               "1": 0
@@ -1621,9 +1690,11 @@ class Game
         // Remove exploded bombs.
         _bombs = _bombs.remove!(b => b.position in explodedBombs);
 
-        // Update the board
+        // Update the board (and store exploded cells to send them to clients)
+        _lastExplodedCells.clear();
         foreach (pos, colorDist; boardAlterations)
         {
+            _lastExplodedCells[colorDist.color] ~= pos;
             Cell * cell = _board.cellAt(pos);
 
             if (_isSuddenDeath && cell.hasCharacter && cell.color == 1)
@@ -1634,6 +1705,12 @@ class Game
             }
             else
                 cell.explode(colorDist.color);
+        }
+
+        // Sort exploded cells
+        foreach (ref positions; _lastExplodedCells.values)
+        {
+            positions = positions.sort.array;
         }
     }
     unittest // One single bomb explodes (kill chars and propagate color)
