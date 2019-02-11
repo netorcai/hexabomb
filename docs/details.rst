@@ -103,6 +103,10 @@ The game state is a JSON_ object with the following fields.
     - ``q`` (number): The :math:`q` axial coordinate of the cell the bomb is in.
     - ``r`` (number): The :math:`q` axial coordinate of the cell the bomb is in.
 
+- ``explosions``: An object of cells that exploded this turn. The key is the color of the exploded cells, while the value is an array of objects with the following fields.
+    - ``q`` (number): The :math:`q` axial coordinate of the cell that just exploded.
+    - ``r`` (number): The :math:`q` axial coordinate of the cell that just exploded.
+
 - ``cell_count``: An object where keys are **player identifiers** (not colors!) and values are their associated number of cells.
 - ``score``: An object where keys are **player identifiers** (not colors!) and values are their associated score.
 
@@ -120,23 +124,30 @@ The following example shows a game state.
     {
       "cells":[
         {"q":0, "r":0, "color":1},
-        {"q":0, "r":1, "color":1},
-        {"q":0, "r":2, "color":2}
+        {"q":0, "r":1, "color":2},
+        {"q":0, "r":2, "color":2},
+        {"q":1, "r":1, "color":2}
       ],
       "characters":[
         {"id":0, "color":1, "q":0, "r":0, "alive": true, "revive_delay":-1},
-        {"id":1, "color":2, "q":0, "r":2, "alive":false, "revive_delay": 1}
+        {"id":1, "color":2, "q":0, "r":2, "alive":false, "revive_delay": 3}
       ],
       "bombs": [
         {"color":1, "range":3, "delay":2, "q":0, "r":1}
       ],
+      "explosions": {
+        "2": [
+          {"q":0, "r":2},
+          {"q":1, "r":1}
+        ]
+      },
       "cell_count":{
         "0": 2,
-        "1": 1
+        "1": 3
       },
       "score":{
-        "0": 6,
-        "1": 15
+        "0": 8,
+        "1": 21
       }
     }
 
