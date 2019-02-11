@@ -101,11 +101,12 @@ The game state is a JSON_ object with the following fields.
     - ``range`` (number): The bomb range (AKA explosion radius), in number of cells.
     - ``delay`` (number): The bomb delay. Bombs explode when it reaches 0.
     - ``q`` (number): The :math:`q` axial coordinate of the cell the bomb is in.
-    - ``r`` (number): The :math:`q` axial coordinate of the cell the bomb is in.
+    - ``r`` (number): The :math:`r` axial coordinate of the cell the bomb is in.
 
 - ``explosions``: An object of cells that exploded this turn. The key is the color of the exploded cells, while the value is an array of objects with the following fields.
+
     - ``q`` (number): The :math:`q` axial coordinate of the cell that just exploded.
-    - ``r`` (number): The :math:`q` axial coordinate of the cell that just exploded.
+    - ``r`` (number): The :math:`r` axial coordinate of the cell that just exploded.
 
 - ``cell_count``: An object where keys are **player identifiers** (not colors!) and values are their associated number of cells.
 - ``score``: An object where keys are **player identifiers** (not colors!) and values are their associated score.
