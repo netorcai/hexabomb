@@ -302,7 +302,7 @@ class Game
         {
             if (_isSuddenDeath)
             {
-                if (playerID in aliveCharacterCount)
+                if (playerID in aliveCharacterCount && playerID != 0)
                     score = _turnNumber;
             }
             else
