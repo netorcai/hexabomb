@@ -21,6 +21,7 @@ def main():
         game_starts = client.read_game_starts()
         game_state = GameState(game_starts.initial_game_state)
         my_color = game_starts.player_id + 1
+        is_sudden_death = game_starts.nb_special_players == 1
         print("done")
 
         possible_actions = [

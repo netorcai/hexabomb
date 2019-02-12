@@ -36,6 +36,7 @@ public class Random
             GameStartsMessage gameStarts = c.readGameStarts();
             GameState initialGameState = GameState.parse(gameStarts.initialGameState);
             int myColor = gameStarts.playerID + 1;
+            boolean isSuddenDeath = gameStarts.nbSpecialPlayers == 1;
             System.out.println("done");
 
             ArrayList<String> possibleActions = new ArrayList<String>();

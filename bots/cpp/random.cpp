@@ -42,6 +42,7 @@ int main()
         const GameStartsMessage gameStarts = c.readGameStarts();
         parseGameState(gameStarts.initialGameState, cells, characters, bombs, score, cellCount);
         int myColor = gameStarts.playerID + 1;
+        bool isSuddenDeath = gameStarts.nbSpecialPlayers == 1;
         printf("done\n");
 
         const vector<string> possibleActions = {

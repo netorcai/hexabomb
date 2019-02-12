@@ -46,6 +46,7 @@ void main()
         const auto gameStarts = c.readGameStarts();
         parseGameState(gameStarts.initialGameState, cells, characters, bombs, score, cellCount);
         int myColor = gameStarts.playerID + 1;
+        bool isSuddenDeath = gameStarts.nbSpecialPlayers == 1;
         writeln("done");
 
         foreach (i; 1..gameStarts.nbTurnsMax)
