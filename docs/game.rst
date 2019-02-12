@@ -1,3 +1,5 @@
+.. _game_description:
+
 Game description
 ================
 hexabomb is a network multi-player (multi-agent) game, intended to be played by bots.

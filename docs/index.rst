@@ -15,6 +15,7 @@ The game is strongly inspired by Bomberman_ and Splatoon_, with hexagons_.
    tuto_first_game
    install
    game
+   sudden_death
    details
    clients
    changelog
