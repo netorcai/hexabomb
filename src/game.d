@@ -1043,7 +1043,7 @@ class Game
         assert(g._characters[0].pos == Position( 0, 0));
         assert(g._characters[1].pos == Position(-1, 0));
         assert(g._characters[2].pos == Position( 1, 0));
-        assert(g._score[0] == 1);
+        assert(g._score[0] == 0);
         assert(g._score[1] == 1);
         assert(g._score[2] == 1);
 
@@ -1063,7 +1063,7 @@ class Game
         assert(g._characters[0].pos == Position( 1,-1)); // moved
         assert(g._characters[1].pos == Position(-1, 0)); // move failed
         assert(g._characters[2].pos == Position( 1, 0)); // no action
-        assert(g._score[0] == 2);
+        assert(g._score[0] == 0);
         assert(g._score[1] == 2);
         assert(g._score[2] == 2);
 
@@ -1085,7 +1085,7 @@ class Game
         assert(g._board.cellAt(Position( 1,-1)).hasBomb); // new bomb
         assert(g._board.cellAt(Position(-1, 0)).hasBomb); // new bomb
         assert(g._board.cellAt(Position( 1, 0)).hasBomb); // new bomb
-        assert(g._score[0] == 3);
+        assert(g._score[0] == 0);
         assert(g._score[1] == 3);
         assert(g._score[2] == 3);
 
@@ -1106,7 +1106,7 @@ class Game
         assert(g._characters[1].pos == Position(-2, 0)); // moved
         assert(g._characters[2].pos == Position( 2, 0)); // moved
         assert( g._board.cellAt(Position( 1,-1)).hasBomb); // new bomb
-        assert(g._score[0] == 4);
+        assert(g._score[0] == 0);
         assert(g._score[1] == 4);
         assert(g._score[2] == 4);
 
@@ -1128,7 +1128,7 @@ class Game
         assert(g._characters[1].pos == Position(-2, 0)); // no move action
         assert(g._characters[2].pos == Position( 2, 1)); // moved
         assert(!g._board.cellAt(Position(-2, 0)).hasBomb); // no new bomb (fail)
-        assert(g._score[0] == 5);
+        assert(g._score[0] == 0);
         assert(g._score[1] == 5);
         assert(g._score[2] == 5);
 
@@ -1154,7 +1154,7 @@ class Game
         assert( g._characters[2].alive); // this one was not in an explosion range
         assert(g._characters[1].reviveDelay == 3);
         assert(g._bombs.length == 0);
-        assert(g._score[0] == 6);
+        assert(g._score[0] == 0);
         assert(g._score[1] == 5); // dead!
         assert(g._score[2] == 6);
 
@@ -1178,7 +1178,7 @@ class Game
         assert( g._characters[2].alive);
         assert(g._characters[1].reviveDelay == 2);
         assert(g._board.cellAt(Position( 2,-1)).hasBomb); // new bomb
-        assert(g._score[0] == 7);
+        assert(g._score[0] == 0);
         assert(g._score[1] == 5);
         assert(g._score[2] == 7);
 
@@ -1201,7 +1201,7 @@ class Game
         assert(!g._characters[1].alive);
         assert( g._characters[2].alive);
         assert(g._characters[1].reviveDelay == 1);
-        assert(g._score[0] == 8);
+        assert(g._score[0] == 0);
         assert(g._score[1] == 5);
         assert(g._score[2] == 8);
 
@@ -1227,7 +1227,7 @@ class Game
         assert(!g._characters[2].alive); // dead!
         assert(!g._board.cellAt(Position( 1, 0)).hasBomb); // no new bomb (it already exploded)
         assert(g._characters[1].reviveDelay == 0);
-        assert(g._score[0] == 9);
+        assert(g._score[0] == 0);
         assert(g._score[1] == 5);
         assert(g._score[2] == 8); // dead!
         assert(g._cellCount[2] == 0);
@@ -1251,7 +1251,7 @@ class Game
         assert(!g._characters[1].alive); // Revive failed (not allowed in sudden death)
         assert(!g._characters[2].alive);
         assert(g._characters[1].reviveDelay == 0);
-        assert(g._score[0] == 10);
+        assert(g._score[0] == 0);
         assert(g._score[1] == 5);
         assert(g._score[2] == 8);
     }
