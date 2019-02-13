@@ -17,6 +17,13 @@ Unreleased
 
 - `Commits since v1.0.0 <https://github.com/netorcai/hexabomb/compare/v1.0.0...master>`_
 
+Added
+~~~~~
+
+- New sudden death game mode, in which the objective of each player is to survive as long as possible.
+  To enable this game mode, run a netorcai game with 1 special player.
+- Cells that just exploded are now in the game state sent to clients each turn.
+
 ........................................................................................................................
 
 v1.0.0
