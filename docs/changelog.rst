@@ -15,7 +15,15 @@ following.
 Unreleased
 ----------
 
-- `Commits since v1.0.0 <https://github.com/netorcai/hexabomb/compare/v1.0.0...master>`_
+- `Commits since v1.1.0 <https://github.com/netorcai/hexabomb/compare/v1.1.0...master>`_
+
+........................................................................................................................
+
+v1.1.0
+------
+
+- Release date: 2019-02-24
+- `Commits since v1.0.0 <https://github.com/netorcai/hexabomb/compare/v1.0.0...v1.1.0>`_
 
 Added
 ~~~~~

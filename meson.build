@@ -1,4 +1,4 @@
-project('hexabomb', 'd', version: '0.2.0-dev')
+project('hexabomb', 'd', version: '1.1.0')
 
 netorcai_dep = dependency('netorcai-client-d', method: 'pkg-config')
 docopt_dep = dependency('docopt-d', method: 'pkg-config')
