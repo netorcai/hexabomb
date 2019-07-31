@@ -1,6 +1,4 @@
-let
-  pkgs = import (fetchTarball "https://github.com/NixOS/nixpkgs/archive/18.03.tar.gz") {};
-in
+{ pkgs ? import (fetchTarball "https://github.com/NixOS/nixpkgs/archive/18.03.tar.gz") {}}:
 
 with pkgs;
 
